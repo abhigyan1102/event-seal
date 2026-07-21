@@ -1,0 +1,30 @@
+{
+  "name": "eventseal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Verification infrastructure for Solana events consumed by off-chain systems.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present && npm run build:functions",
+    "build:functions": "node scripts/build-functions.mjs",
+    "dev": "npm run build --workspace @eventseal/sdk && npm run dev --workspace @eventseal/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "format:check": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.6",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

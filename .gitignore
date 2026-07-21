@@ -1,0 +1,28 @@
+node_modules/
+dist/
+coverage/
+target/
+.anchor/
+.turbo/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.insforge/
+.superstack/
+.codex/
+.claude/
+*-session.jsonl
+PLAN.md
+plan.md
+
+# Solana and Anchor local state
+test-ledger/
+*.so
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
