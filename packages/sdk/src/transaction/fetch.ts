@@ -56,7 +56,7 @@ async function rpcRequest<T>(
     throw new Error("Solana RPC response did not include a result.");
   }
 
-  return payload.result as T;
+  return payload.result;
 }
 
 export async function fetchFinalizedTransaction(input: VerifyEventInput) {

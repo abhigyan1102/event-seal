@@ -52,9 +52,9 @@ export interface VerificationResult {
   signature: string;
   cluster: SolanaCluster;
   commitment: "finalized";
-  slot?: number;
+  slot?: number | undefined;
   expectedProgramId: string;
-  receiptId?: string;
-  event?: EventEvidence;
+  receiptId?: string | undefined;
+  event?: EventEvidence | undefined;
   evidence: VerificationEvidence[];
 }

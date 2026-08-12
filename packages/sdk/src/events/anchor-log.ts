@@ -10,7 +10,7 @@ interface LocatedEvent extends EventEvidence {
 }
 
 export interface AnchorLogAttribution {
-  event?: EventEvidence;
+  event?: EventEvidence | undefined;
   reasonCode: Extract<
     VerificationReasonCode,
     | "VERIFIED"

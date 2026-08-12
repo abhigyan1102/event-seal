@@ -1,8 +1,8 @@
 import { createClient } from "@insforge/sdk";
 import type { VerificationResult, VerifyEventInput } from "@eventseal/sdk";
 
-const baseUrl = import.meta.env.VITE_INSFORGE_URL as string | undefined;
-const anonKey = import.meta.env.VITE_INSFORGE_ANON_KEY as string | undefined;
+const baseUrl = import.meta.env["VITE_INSFORGE_URL"] as string | undefined;
+const anonKey = import.meta.env["VITE_INSFORGE_ANON_KEY"] as string | undefined;
 
 export async function requestVerification(
   input: VerifyEventInput,
