@@ -13,6 +13,9 @@ target/
 .superstack/
 .codex/
 .claude/
+CLAUDE.md
+DESIGN.md
+context.md
 *-session.jsonl
 PLAN.md
 plan.md
