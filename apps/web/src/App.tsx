@@ -54,7 +54,11 @@ export function App() {
       </section>
 
       <section className="workspace" aria-label="Verification playground">
-        <form onSubmit={(e) => { void submit(e); }}>
+        <form
+          onSubmit={(e) => {
+            void submit(e);
+          }}
+        >
           <div className="section-heading">
             <span>01</span>
             <div>
