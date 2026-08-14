@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import type { VerificationResult, VerifyEventInput } from "@eventseal/sdk";
 
 import { requestVerification } from "./api";
@@ -54,7 +54,11 @@ export function App() {
       </section>
 
       <section className="workspace" aria-label="Verification playground">
-        <form onSubmit={submit}>
+        <form
+          onSubmit={(e) => {
+            void submit(e);
+          }}
+        >
           <div className="section-heading">
             <span>01</span>
             <div>
