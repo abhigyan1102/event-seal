@@ -124,7 +124,7 @@ describe("Anchor log attribution", () => {
     expect(result.reasonCode).toBe("EVENT_NOT_FOUND");
   });
 
-  it("verifies with an unrelated discriminator when the right one is requested", () => {
+  it("returns DISCRIMINATOR_MISMATCH when requesting a different discriminator", () => {
     // Expected program emits matching data, but we ask for a different discriminator
     const result = attributeAnchorLogEvent(
       successfulEventLogs(),
