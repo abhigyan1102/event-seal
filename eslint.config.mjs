@@ -49,6 +49,14 @@ export default tseslint.config(
   {
     files: ["functions/**/*.ts"],
     extends: [...tseslint.configs.recommended],
+    languageOptions: {
+      globals: {
+        Deno: "readonly",
+        Request: "readonly",
+        Response: "readonly",
+        URL: "readonly",
+      },
+    },
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -66,8 +74,35 @@ export default tseslint.config(
   {
     files: ["apps/web/**/*.tsx", "apps/web/**/*.ts"],
     plugins: { "react-hooks": reactHooks },
+    languageOptions: {
+      globals: globals.browser,
+    },
     rules: {
       ...reactHooks.configs.recommended.rules,
+    },
+  },
+
+  // Node-targeted tooling and test files
+  {
+    files: [
+      "eslint.config.mjs",
+      "packages/**/*.test.ts",
+      "packages/**/test/**/*.ts",
+    ],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+
+  // Web-platform globals used by the universal SDK runtime
+  {
+    files: ["packages/sdk/src/**/*.ts"],
+    languageOptions: {
+      globals: {
+        atob: "readonly",
+        crypto: "readonly",
+        TextEncoder: "readonly",
+      },
     },
   },
 
@@ -76,16 +111,6 @@ export default tseslint.config(
     files: ["**/*.test.ts", "**/*.spec.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
-
-  // Node/browser globals
-  {
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
     },
   },
 );
