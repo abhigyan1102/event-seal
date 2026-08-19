@@ -28,16 +28,17 @@ The build keeps `npm:@insforge/sdk` external because InsForge resolves that pack
 
 ## Environment
 
-| Variable                        | `verify-event` | `get-receipt` | `helius-webhook` | Description                                                  |
-| ------------------------------- | -------------- | ------------- | ---------------- | ------------------------------------------------------------ |
-| `INSFORGE_BASE_URL`             | Required       | Required      | Required         | Server-side InsForge project URL.                            |
-| `INSFORGE_API_KEY`              | Required       | Required      | Required         | Server-only administrative key used for receipt persistence. |
-| `SOLANA_RPC_URL`                | Optional       | Not used      | Optional         | Solana JSON-RPC endpoint; defaults to SDK cluster behavior.  |
-| `EVENTSEAL_CLUSTER`             | Request body   | Not used      | Required         | `mainnet-beta`, `devnet`, or `testnet`.                      |
-| `EVENTSEAL_EXPECTED_PROGRAM_ID` | Request body   | Not used      | Required         | Program expected to emit the event.                          |
-| `EVENTSEAL_EVENT_FORMAT`        | Request body   | Not used      | Required         | `anchor-log` or `anchor-cpi`.                                |
-| `EVENTSEAL_EVENT_DISCRIMINATOR` | Request body   | Not used      | Required         | Expected 16-character lowercase hex discriminator.           |
-| `EVENTSEAL_WEBHOOK_SECRET`      | Not used       | Not used      | Required         | Shared secret required in `X-EventSeal-Webhook-Secret`.      |
+| Setting                    | `verify-event`           | `get-receipt` | `helius-webhook`                | Description                                                  |
+| -------------------------- | ------------------------ | ------------- | ------------------------------- | ------------------------------------------------------------ |
+| `INSFORGE_BASE_URL`        | Required env             | Required env  | Required env                    | Server-side InsForge project URL.                            |
+| `INSFORGE_API_KEY`         | Required env             | Required env  | Required env                    | Server-only administrative key used for receipt persistence. |
+| `SOLANA_RPC_URL`           | Optional env or `rpcUrl` | Not used      | Optional env                    | Solana JSON-RPC endpoint; defaults to SDK cluster behavior.  |
+| `signature`                | Required request field   | Not used      | Helius payload field            | Solana transaction signature to verify.                      |
+| `cluster`                  | Required request field   | Not used      | `EVENTSEAL_CLUSTER`             | `mainnet-beta`, `devnet`, or `testnet`.                      |
+| `expectedProgramId`        | Required request field   | Not used      | `EVENTSEAL_EXPECTED_PROGRAM_ID` | Program expected to emit the event.                          |
+| `event.format`             | Required request field   | Not used      | `EVENTSEAL_EVENT_FORMAT`        | `anchor-log` or `anchor-cpi`.                                |
+| `event.discriminator`      | Required request field   | Not used      | `EVENTSEAL_EVENT_DISCRIMINATOR` | Expected 16-character lowercase hex discriminator.           |
+| `EVENTSEAL_WEBHOOK_SECRET` | Not used                 | Not used      | Required env                    | Shared secret required in `X-EventSeal-Webhook-Secret`.      |
 
 Never expose `INSFORGE_API_KEY` or `EVENTSEAL_WEBHOOK_SECRET` to the browser or commit real values to the repository.
 
