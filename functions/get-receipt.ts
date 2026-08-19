@@ -1,24 +1,34 @@
 import { createAdminClient } from "npm:@insforge/sdk";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+import {
+  corsHeaders,
+  errorResponse,
+  jsonResponse,
+  optionsResponse,
+} from "./_shared/http.ts";
+import { validateReceiptId } from "./_shared/validation.ts";
+
+const responseHeaders = corsHeaders(["GET", "OPTIONS"]);
 
 export default async function handler(request: Request): Promise<Response> {
-  if (request.method === "OPTIONS")
-    return new Response(null, { status: 204, headers: corsHeaders });
+  if (request.method === "OPTIONS") return optionsResponse(responseHeaders);
   if (request.method !== "GET")
-    return json({ error: "Method not allowed" }, 405);
+    return errorResponse("Method not allowed", 405, responseHeaders);
 
-  const receiptId = new URL(request.url).searchParams.get("receiptId");
-  if (!receiptId) return json({ error: "receiptId is required" }, 400);
+  const receiptId = validateReceiptId(
+    new URL(request.url).searchParams.get("receiptId"),
+  );
+  if (!receiptId.ok)
+    return errorResponse(receiptId.error, 400, responseHeaders);
 
   const baseUrl = Deno.env.get("INSFORGE_BASE_URL");
   const apiKey = Deno.env.get("INSFORGE_API_KEY");
   if (!baseUrl || !apiKey) {
-    return json({ error: "Receipt storage is not configured" }, 500);
+    return errorResponse(
+      "Receipt storage is not configured",
+      500,
+      responseHeaders,
+    );
   }
 
   const client = createAdminClient({
@@ -28,17 +38,10 @@ export default async function handler(request: Request): Promise<Response> {
   const { data, error } = await client.database
     .from("verification_receipts")
     .select("*")
-    .eq("receipt_id", receiptId)
+    .eq("receipt_id", receiptId.value)
     .maybeSingle();
 
-  if (error) return json({ error: error.message }, 500);
-  if (!data) return json({ error: "Receipt not found" }, 404);
-  return json(data, 200);
-}
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  if (error) return errorResponse(error.message, 500, responseHeaders);
+  if (!data) return errorResponse("Receipt not found", 404, responseHeaders);
+  return jsonResponse(data, 200, responseHeaders);
 }

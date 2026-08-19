@@ -1,101 +1,95 @@
-import type {
-  EventFormat,
-  SolanaCluster,
-  VerifyEventInput,
-} from "../packages/sdk/src/index.ts";
+import type { VerifyEventInput } from "../packages/sdk/src/index.ts";
 
+import {
+  corsHeaders,
+  errorResponse,
+  jsonResponse,
+  optionsResponse,
+} from "./_shared/http.ts";
+import {
+  validateHeliusPayload,
+  validateWebhookConfiguration,
+} from "./_shared/validation.ts";
 import { verifyAndPersist } from "./_shared/verify-and-persist.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-EventSeal-Webhook-Secret",
-};
-
-interface HeliusTransaction {
-  signature?: string;
-}
+const responseHeaders = corsHeaders(
+  ["POST", "OPTIONS"],
+  ["X-EventSeal-Webhook-Secret"],
+);
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return optionsResponse(responseHeaders);
   }
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, 405);
+    return errorResponse("Method not allowed", 405, responseHeaders);
   }
 
   const webhookSecret = Deno.env.get("EVENTSEAL_WEBHOOK_SECRET");
-  if (!webhookSecret) {
-    return json({ error: "Webhook authentication is not configured" }, 500);
+  if (!webhookSecret || webhookSecret.trim().length === 0) {
+    return errorResponse(
+      "Webhook authentication is not configured",
+      500,
+      responseHeaders,
+    );
   }
   if (request.headers.get("X-EventSeal-Webhook-Secret") !== webhookSecret) {
-    return json({ error: "Unauthorized" }, 401);
+    return errorResponse("Unauthorized", 401, responseHeaders);
   }
 
-  let payload: HeliusTransaction[];
+  let payload: unknown;
   try {
-    payload = (await request.json()) as HeliusTransaction[];
+    payload = await request.json();
   } catch {
-    return json({ error: "Request body must be valid JSON" }, 400);
+    return errorResponse(
+      "Request body must be valid JSON",
+      400,
+      responseHeaders,
+    );
   }
-  if (!Array.isArray(payload)) {
-    return json({ error: "Expected an array of transactions" }, 400);
+  const payloadValidation = validateHeliusPayload(payload);
+  if (!payloadValidation.ok) {
+    return errorResponse(payloadValidation.error, 400, responseHeaders);
   }
 
   try {
     const configuration = readConfiguration();
-    const signatures = [
-      ...new Set(
-        payload.flatMap((transaction) =>
-          transaction.signature ? [transaction.signature] : [],
-        ),
-      ),
-    ];
     const results = await Promise.all(
-      signatures.map((signature) =>
+      payloadValidation.value.map((signature) =>
         verifyAndPersist({ ...configuration, signature }),
       ),
     );
 
-    return json({ processed: results.length, results }, 200);
+    return jsonResponse(
+      { processed: results.length, results },
+      200,
+      responseHeaders,
+    );
   } catch (error) {
-    return json(
-      {
-        error:
-          error instanceof Error ? error.message : "Webhook processing failed",
-      },
+    return errorResponse(
+      error instanceof Error ? error.message : "Webhook processing failed",
       500,
+      responseHeaders,
     );
   }
 }
 
 function readConfiguration(): Omit<VerifyEventInput, "signature"> {
-  const cluster = Deno.env.get("EVENTSEAL_CLUSTER") as
-    SolanaCluster | undefined;
-  const expectedProgramId = Deno.env.get("EVENTSEAL_EXPECTED_PROGRAM_ID");
-  const format = Deno.env.get("EVENTSEAL_EVENT_FORMAT") as
-    EventFormat | undefined;
-  const discriminator = Deno.env.get("EVENTSEAL_EVENT_DISCRIMINATOR");
+  const configuration = validateWebhookConfiguration({
+    EVENTSEAL_CLUSTER: Deno.env.get("EVENTSEAL_CLUSTER"),
+    EVENTSEAL_EXPECTED_PROGRAM_ID: Deno.env.get(
+      "EVENTSEAL_EXPECTED_PROGRAM_ID",
+    ),
+    EVENTSEAL_EVENT_FORMAT: Deno.env.get("EVENTSEAL_EVENT_FORMAT"),
+    EVENTSEAL_EVENT_DISCRIMINATOR: Deno.env.get(
+      "EVENTSEAL_EVENT_DISCRIMINATOR",
+    ),
+    SOLANA_RPC_URL: Deno.env.get("SOLANA_RPC_URL"),
+  });
 
-  if (!cluster || !expectedProgramId || !format || !discriminator) {
-    throw new Error(
-      "EVENTSEAL_CLUSTER, EVENTSEAL_EXPECTED_PROGRAM_ID, EVENTSEAL_EVENT_FORMAT, and EVENTSEAL_EVENT_DISCRIMINATOR are required.",
-    );
+  if (!configuration.ok) {
+    throw new Error(configuration.error);
   }
 
-  return {
-    cluster,
-    expectedProgramId,
-    event: { format, discriminator },
-    commitment: "finalized",
-    rpcUrl: Deno.env.get("SOLANA_RPC_URL"),
-  };
-}
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return configuration.value;
 }
