@@ -22,15 +22,16 @@
     "format": "prettier --write ."
   },
   "lint-staged": {
-    "*.{js,mjs,cjs,ts,tsx,json,md,css}": [
-      "prettier --write"
-    ],
     "*.{js,mjs,cjs,ts,tsx}": [
+      "prettier --write",
       "eslint --fix"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
     ]
   },
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=20.17"
   },
   "devDependencies": {
     "@eslint/js": "9.31.0",
