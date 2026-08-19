@@ -22,7 +22,6 @@ describe("validateVerifyEventInput", () => {
     const result = validateVerifyEventInput({
       ...validInput,
       commitment: "finalized",
-      rpcUrl: "https://api.devnet.solana.com",
     });
 
     expect(result).toEqual({
@@ -30,7 +29,6 @@ describe("validateVerifyEventInput", () => {
       value: {
         ...validInput,
         commitment: "finalized",
-        rpcUrl: "https://api.devnet.solana.com",
       },
     });
   });
@@ -86,16 +84,24 @@ describe("validateVerifyEventInput", () => {
     });
   });
 
-  it("rejects unsupported commitment and empty rpcUrl values", () => {
+  it("rejects unsupported commitment values", () => {
     expect(
       validateVerifyEventInput({ ...validInput, commitment: "confirmed" }),
     ).toEqual({
       ok: false,
       error: "commitment must be finalized when provided",
     });
-    expect(validateVerifyEventInput({ ...validInput, rpcUrl: "" })).toEqual({
+  });
+
+  it("rejects client-controlled RPC URLs", () => {
+    expect(
+      validateVerifyEventInput({
+        ...validInput,
+        rpcUrl: "https://api.devnet.solana.com",
+      }),
+    ).toEqual({
       ok: false,
-      error: "rpcUrl must be a non-empty string when provided",
+      error: "rpcUrl is not accepted by the hosted verify-event function",
     });
   });
 });

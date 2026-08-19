@@ -56,9 +56,10 @@ export function validateVerifyEventInput(
     return invalid("commitment must be finalized when provided");
   }
 
-  const rpcUrl = value.rpcUrl;
-  if (rpcUrl !== undefined && !isNonEmptyString(rpcUrl)) {
-    return invalid("rpcUrl must be a non-empty string when provided");
+  if (value.rpcUrl !== undefined) {
+    return invalid(
+      "rpcUrl is not accepted by the hosted verify-event function",
+    );
   }
 
   return {
@@ -69,7 +70,6 @@ export function validateVerifyEventInput(
       expectedProgramId,
       event: { format, discriminator },
       commitment,
-      rpcUrl,
     },
   };
 }
