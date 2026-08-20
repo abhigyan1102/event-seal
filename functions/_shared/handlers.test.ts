@@ -284,8 +284,20 @@ describe("createHeliusWebhookHandler", () => {
 
     expect(response.status).toBe(200);
     expect(await jsonBody(response)).toEqual({
+      failed: 0,
       processed: 2,
-      results: [verificationResult, verificationResult],
+      results: [
+        {
+          result: verificationResult,
+          signature: "sig-1",
+          status: "verified",
+        },
+        {
+          result: verificationResult,
+          signature: "sig-2",
+          status: "verified",
+        },
+      ],
     });
     expect(verifyAndPersist).toHaveBeenCalledTimes(2);
     expect(verifyAndPersist).toHaveBeenNthCalledWith(1, {
@@ -354,6 +366,48 @@ describe("createHeliusWebhookHandler", () => {
     expect(response.status).toBe(200);
     expect(verifyAndPersist).toHaveBeenCalledTimes(10);
     expect(maxActive).toBeLessThanOrEqual(4);
+  });
+
+  it("preserves successful webhook results when one signature fails", async () => {
+    const failure = new Error("private RPC failed");
+    const testLogger = logger();
+    const verifyAndPersist = vi.fn(async ({ signature }) => {
+      if (signature === "sig-2") throw failure;
+      return { ...verificationResult, signature };
+    });
+    const handler = createHeliusWebhookHandler({
+      getEnv: getEnv(webhookEnv),
+      logger: testLogger,
+      verifyAndPersist,
+    });
+
+    const response = await handler(
+      jsonRequest([{ signature: "sig-1" }, { signature: "sig-2" }], {
+        "X-EventSeal-Webhook-Secret": "webhook-secret",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await jsonBody(response)).toEqual({
+      failed: 1,
+      processed: 2,
+      results: [
+        {
+          result: { ...verificationResult, signature: "sig-1" },
+          signature: "sig-1",
+          status: "verified",
+        },
+        {
+          error: "Verification failed",
+          signature: "sig-2",
+          status: "failed",
+        },
+      ],
+    });
+    expect(testLogger.error).toHaveBeenCalledWith(
+      "EventSeal webhook signature verification failed",
+      { error: failure, signature: "sig-2" },
+    );
   });
 
   it("rejects malformed webhook payloads", async () => {

@@ -21,6 +21,7 @@ type GetEnv = (name: string) => string | undefined;
 
 const HELIUS_WEBHOOK_MAX_SIGNATURES = 25;
 const HELIUS_WEBHOOK_VERIFY_CONCURRENCY = 4;
+const WEBHOOK_SECRET_ENCODER = new TextEncoder();
 
 interface Logger {
   error(message: string, ...details: unknown[]): void;
@@ -68,6 +69,18 @@ interface HeliusWebhookHandlerDependencies {
   logger: Logger;
   verifyAndPersist(input: VerifyEventInput): Promise<VerificationResult>;
 }
+
+type HeliusWebhookVerificationResult =
+  | {
+      signature: string;
+      status: "verified";
+      result: VerificationResult;
+    }
+  | {
+      signature: string;
+      status: "failed";
+      error: "Verification failed";
+    };
 
 export function createVerifyEventHandler({
   getEnv,
@@ -204,7 +217,12 @@ export function createHeliusWebhookHandler({
         responseHeaders,
       );
     }
-    if (request.headers.get("X-EventSeal-Webhook-Secret") !== webhookSecret) {
+    if (
+      !timingSafeEqual(
+        request.headers.get("X-EventSeal-Webhook-Secret") ?? "",
+        webhookSecret,
+      )
+    ) {
       return errorResponse("Unauthorized", 401, responseHeaders);
     }
 
@@ -235,11 +253,33 @@ export function createHeliusWebhookHandler({
       const results = await mapWithConcurrency(
         payloadValidation.value,
         HELIUS_WEBHOOK_VERIFY_CONCURRENCY,
-        (signature) => verifyAndPersist({ ...configuration, signature }),
+        async (signature): Promise<HeliusWebhookVerificationResult> => {
+          try {
+            return {
+              signature,
+              status: "verified",
+              result: await verifyAndPersist({ ...configuration, signature }),
+            };
+          } catch (error) {
+            logger.error("EventSeal webhook signature verification failed", {
+              error,
+              signature,
+            });
+            return {
+              signature,
+              status: "failed",
+              error: "Verification failed",
+            };
+          }
+        },
       );
 
       return jsonResponse(
-        { processed: results.length, results },
+        {
+          failed: results.filter((result) => result.status === "failed").length,
+          processed: results.length,
+          results,
+        },
         200,
         responseHeaders,
       );
@@ -266,6 +306,19 @@ function readHeliusConfiguration(
   }
 
   return configuration.value;
+}
+
+function timingSafeEqual(left: string, right: string): boolean {
+  const leftBytes = WEBHOOK_SECRET_ENCODER.encode(left);
+  const rightBytes = WEBHOOK_SECRET_ENCODER.encode(right);
+  const length = Math.max(leftBytes.length, rightBytes.length);
+  let difference = leftBytes.length ^ rightBytes.length;
+
+  for (let index = 0; index < length; index += 1) {
+    difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
+  }
+
+  return difference === 0;
 }
 
 async function mapWithConcurrency<T, U>(
