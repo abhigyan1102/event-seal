@@ -36,9 +36,14 @@ The build keeps `npm:@insforge/sdk` external because InsForge resolves that pack
 | `signature`                | Required request field | Not used      | Helius payload field            | Solana transaction signature to verify.                                  |
 | `cluster`                  | Required request field | Not used      | `EVENTSEAL_CLUSTER`             | `mainnet-beta`, `devnet`, or `testnet`.                                  |
 | `expectedProgramId`        | Required request field | Not used      | `EVENTSEAL_EXPECTED_PROGRAM_ID` | Program expected to emit the event.                                      |
-| `event.format`             | Required request field | Not used      | `EVENTSEAL_EVENT_FORMAT`        | `anchor-log` or `anchor-cpi`.                                            |
+| `event.format`             | Required request field | Not used      | `EVENTSEAL_EVENT_FORMAT`        | `anchor-log` for hosted webhook receipt deployment.                      |
 | `event.discriminator`      | Required request field | Not used      | `EVENTSEAL_EVENT_DISCRIMINATOR` | Expected 16-character lowercase hex discriminator.                       |
 | `EVENTSEAL_WEBHOOK_SECRET` | Not used               | Not used      | Required env                    | Shared secret required in `X-EventSeal-Webhook-Secret`.                  |
+
+The SDK request contract includes `anchor-cpi`, but this verifier version fails
+closed for CPI attribution with `CPI_EVENT_UNSUPPORTED`. Do not configure
+`EVENTSEAL_EVENT_FORMAT=anchor-cpi` for hosted webhook deployments that must
+create verified receipts.
 
 Never expose `INSFORGE_API_KEY` or `EVENTSEAL_WEBHOOK_SECRET` to the browser or commit real values to the repository.
 
@@ -64,6 +69,9 @@ Deployment order matters:
 5. Configure Helius to send `X-EventSeal-Webhook-Secret` with the same secret stored in InsForge.
 
 Before opening a backend deployment PR, confirm the diff does not include real `.env` files, `.insforge`, `context.md`, `CLAUDE.md`, `DESIGN.md`, `PLAN.md`, private planning notes, or private credentials.
+
+For the full deployment checklist, smoke checks, and non-secret deployment record
+template, see [`docs/insforge-deploy-runbook.md`](../docs/insforge-deploy-runbook.md).
 
 ## Hosted routes
 
