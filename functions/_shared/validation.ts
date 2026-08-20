@@ -12,6 +12,20 @@ type ValidationResult<T> =
 
 type VerifyEventConfiguration = Omit<VerifyEventInput, "signature">;
 
+export function applyServerRpcUrl(
+  input: VerifyEventInput,
+  rpcUrl: string | undefined,
+): ValidationResult<VerifyEventInput> {
+  if (rpcUrl === undefined) {
+    return { ok: true, value: input };
+  }
+  if (!isNonEmptyString(rpcUrl)) {
+    return invalid("SOLANA_RPC_URL must be a non-empty string when provided");
+  }
+
+  return { ok: true, value: { ...input, rpcUrl } };
+}
+
 export function validateVerifyEventInput(
   value: unknown,
 ): ValidationResult<VerifyEventInput> {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyServerRpcUrl,
   validateHeliusPayload,
   validateReceiptId,
   validateVerifyEventInput,
@@ -16,6 +17,31 @@ const validInput = {
     discriminator: "0102030405060708",
   },
 };
+
+describe("applyServerRpcUrl", () => {
+  it("adds the deployment-owned RPC URL to hosted verify-event input", () => {
+    expect(
+      applyServerRpcUrl(validInput, "https://private-rpc.example"),
+    ).toEqual({
+      ok: true,
+      value: { ...validInput, rpcUrl: "https://private-rpc.example" },
+    });
+  });
+
+  it("leaves input unchanged when no deployment RPC URL is configured", () => {
+    expect(applyServerRpcUrl(validInput, undefined)).toEqual({
+      ok: true,
+      value: validInput,
+    });
+  });
+
+  it("rejects blank deployment RPC URL configuration", () => {
+    expect(applyServerRpcUrl(validInput, "")).toEqual({
+      ok: false,
+      error: "SOLANA_RPC_URL must be a non-empty string when provided",
+    });
+  });
+});
 
 describe("validateVerifyEventInput", () => {
   it("accepts a valid VerifyEventInput shape", () => {

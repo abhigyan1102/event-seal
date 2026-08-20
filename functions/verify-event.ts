@@ -6,7 +6,10 @@ import {
   jsonResponse,
   optionsResponse,
 } from "./_shared/http.ts";
-import { validateVerifyEventInput } from "./_shared/validation.ts";
+import {
+  applyServerRpcUrl,
+  validateVerifyEventInput,
+} from "./_shared/validation.ts";
 import { verifyAndPersist } from "./_shared/verify-and-persist.ts";
 
 const responseHeaders = corsHeaders(["POST", "OPTIONS"]);
@@ -26,7 +29,22 @@ export default async function handler(request: Request): Promise<Response> {
     if (!validation.ok) {
       return errorResponse(validation.error, 400, responseHeaders);
     }
-    input = validation.value;
+    const serverRpcInput = applyServerRpcUrl(
+      validation.value,
+      Deno.env.get("SOLANA_RPC_URL"),
+    );
+    if (!serverRpcInput.ok) {
+      globalThis.console.error(
+        "EventSeal verification configuration invalid",
+        serverRpcInput.error,
+      );
+      return errorResponse(
+        "Verification is not configured",
+        500,
+        responseHeaders,
+      );
+    }
+    input = serverRpcInput.value;
   } catch {
     return errorResponse(
       "Request body must be valid JSON",
