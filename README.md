@@ -202,7 +202,9 @@ The deployed functions are invoked through InsForge function slugs:
 | `get-receipt`    | `GET`  | Retrieve a receipt using the `receiptId` query parameter.               |
 | `helius-webhook` | `POST` | Deduplicate Helius signatures, verify them, and persist their receipts. |
 
-See [`functions/README.md`](./functions/README.md) for environment variables and deployment details.
+See [`functions/README.md`](./functions/README.md) for environment variables
+and [`docs/insforge-deploy-runbook.md`](./docs/insforge-deploy-runbook.md) for
+the deployment checklist, smoke checks, and non-secret deployment record.
 
 ## Demonstration program
 
