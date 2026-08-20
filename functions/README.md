@@ -28,17 +28,17 @@ The build keeps `npm:@insforge/sdk` external because InsForge resolves that pack
 
 ## Environment
 
-| Setting                    | `verify-event`           | `get-receipt` | `helius-webhook`                | Description                                                  |
-| -------------------------- | ------------------------ | ------------- | ------------------------------- | ------------------------------------------------------------ |
-| `INSFORGE_BASE_URL`        | Required env             | Required env  | Required env                    | Server-side InsForge project URL.                            |
-| `INSFORGE_API_KEY`         | Required env             | Required env  | Required env                    | Server-only administrative key used for receipt persistence. |
-| `SOLANA_RPC_URL`           | Optional env or `rpcUrl` | Not used      | Optional env                    | Solana JSON-RPC endpoint; defaults to SDK cluster behavior.  |
-| `signature`                | Required request field   | Not used      | Helius payload field            | Solana transaction signature to verify.                      |
-| `cluster`                  | Required request field   | Not used      | `EVENTSEAL_CLUSTER`             | `mainnet-beta`, `devnet`, or `testnet`.                      |
-| `expectedProgramId`        | Required request field   | Not used      | `EVENTSEAL_EXPECTED_PROGRAM_ID` | Program expected to emit the event.                          |
-| `event.format`             | Required request field   | Not used      | `EVENTSEAL_EVENT_FORMAT`        | `anchor-log` or `anchor-cpi`.                                |
-| `event.discriminator`      | Required request field   | Not used      | `EVENTSEAL_EVENT_DISCRIMINATOR` | Expected 16-character lowercase hex discriminator.           |
-| `EVENTSEAL_WEBHOOK_SECRET` | Not used                 | Not used      | Required env                    | Shared secret required in `X-EventSeal-Webhook-Secret`.      |
+| Setting                    | `verify-event`         | `get-receipt` | `helius-webhook`                | Description                                                              |
+| -------------------------- | ---------------------- | ------------- | ------------------------------- | ------------------------------------------------------------------------ |
+| `INSFORGE_BASE_URL`        | Required env           | Required env  | Required env                    | Server-side InsForge project URL.                                        |
+| `INSFORGE_API_KEY`         | Required env           | Required env  | Required env                    | Server-only administrative key used for receipt persistence.             |
+| `SOLANA_RPC_URL`           | Optional env           | Not used      | Optional env                    | Server-owned Solana JSON-RPC endpoint; defaults to SDK cluster behavior. |
+| `signature`                | Required request field | Not used      | Helius payload field            | Solana transaction signature to verify.                                  |
+| `cluster`                  | Required request field | Not used      | `EVENTSEAL_CLUSTER`             | `mainnet-beta`, `devnet`, or `testnet`.                                  |
+| `expectedProgramId`        | Required request field | Not used      | `EVENTSEAL_EXPECTED_PROGRAM_ID` | Program expected to emit the event.                                      |
+| `event.format`             | Required request field | Not used      | `EVENTSEAL_EVENT_FORMAT`        | `anchor-log` or `anchor-cpi`.                                            |
+| `event.discriminator`      | Required request field | Not used      | `EVENTSEAL_EVENT_DISCRIMINATOR` | Expected 16-character lowercase hex discriminator.                       |
+| `EVENTSEAL_WEBHOOK_SECRET` | Not used               | Not used      | Required env                    | Shared secret required in `X-EventSeal-Webhook-Secret`.                  |
 
 Never expose `INSFORGE_API_KEY` or `EVENTSEAL_WEBHOOK_SECRET` to the browser or commit real values to the repository.
 
@@ -69,8 +69,8 @@ Before opening a backend deployment PR, confirm the diff does not include real `
 
 InsForge exposes deployed functions under `/functions/{slug}`:
 
-| Method | Route                       | Notes                                                                       |
-| ------ | --------------------------- | --------------------------------------------------------------------------- |
-| `POST` | `/functions/verify-event`   | Body must match the SDK `VerifyEventInput` shape.                           |
-| `GET`  | `/functions/get-receipt`    | Requires `receiptId` as a query parameter.                                  |
-| `POST` | `/functions/helius-webhook` | Requires `X-EventSeal-Webhook-Secret`; body is a Helius transactions array. |
+| Method | Route                       | Notes                                                                                    |
+| ------ | --------------------------- | ---------------------------------------------------------------------------------------- |
+| `POST` | `/functions/verify-event`   | Body must match the SDK `VerifyEventInput` shape except `rpcUrl`, which is server-owned. |
+| `GET`  | `/functions/get-receipt`    | Requires `receiptId` as a query parameter.                                               |
+| `POST` | `/functions/helius-webhook` | Requires `X-EventSeal-Webhook-Secret`; body is a Helius transactions array.              |
