@@ -31,17 +31,25 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
 
-  const client = createAdminClient({
-    baseUrl,
-    apiKey,
-  });
-  const { data, error } = await client.database
-    .from("verification_receipts")
-    .select("*")
-    .eq("receipt_id", receiptId.value)
-    .maybeSingle();
+  try {
+    const client = createAdminClient({
+      baseUrl,
+      apiKey,
+    });
+    const { data, error } = await client.database
+      .from("verification_receipts")
+      .select("*")
+      .eq("receipt_id", receiptId.value)
+      .maybeSingle();
 
-  if (error) return errorResponse(error.message, 500, responseHeaders);
-  if (!data) return errorResponse("Receipt not found", 404, responseHeaders);
-  return jsonResponse(data, 200, responseHeaders);
+    if (error) {
+      globalThis.console.error("EventSeal receipt lookup failed", error);
+      return errorResponse("Receipt lookup failed", 500, responseHeaders);
+    }
+    if (!data) return errorResponse("Receipt not found", 404, responseHeaders);
+    return jsonResponse(data, 200, responseHeaders);
+  } catch (error) {
+    globalThis.console.error("EventSeal receipt lookup failed", error);
+    return errorResponse("Receipt lookup failed", 500, responseHeaders);
+  }
 }

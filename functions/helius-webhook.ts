@@ -66,11 +66,8 @@ export default async function handler(request: Request): Promise<Response> {
       responseHeaders,
     );
   } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : "Webhook processing failed",
-      500,
-      responseHeaders,
-    );
+    globalThis.console.error("EventSeal webhook processing failed", error);
+    return errorResponse("Webhook processing failed", 500, responseHeaders);
   }
 }
 

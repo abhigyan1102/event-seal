@@ -39,10 +39,7 @@ export default async function handler(request: Request): Promise<Response> {
     const result = await verifyAndPersist(input);
     return jsonResponse(result, 200, responseHeaders);
   } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : "Verification failed",
-      500,
-      responseHeaders,
-    );
+    globalThis.console.error("EventSeal verification failed", error);
+    return errorResponse("Verification failed", 500, responseHeaders);
   }
 }
