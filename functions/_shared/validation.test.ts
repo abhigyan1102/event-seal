@@ -211,6 +211,33 @@ describe("validateWebhookConfiguration", () => {
     expect(
       validateWebhookConfiguration({
         ...validEnv,
+        EVENTSEAL_EXPECTED_PROGRAM_ID: "",
+      }),
+    ).toEqual({
+      ok: false,
+      error: "EVENTSEAL_EXPECTED_PROGRAM_ID is required",
+    });
+    expect(
+      validateWebhookConfiguration({
+        ...validEnv,
+        EVENTSEAL_EVENT_FORMAT: "custom-log",
+      }),
+    ).toEqual({
+      ok: false,
+      error: "EVENTSEAL_EVENT_FORMAT must be anchor-log or anchor-cpi",
+    });
+    expect(
+      validateWebhookConfiguration({
+        ...validEnv,
+        SOLANA_RPC_URL: " ",
+      }),
+    ).toEqual({
+      ok: false,
+      error: "SOLANA_RPC_URL must be a non-empty string when provided",
+    });
+    expect(
+      validateWebhookConfiguration({
+        ...validEnv,
         EVENTSEAL_CLUSTER: "localnet",
       }),
     ).toEqual({
