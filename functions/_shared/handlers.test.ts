@@ -302,6 +302,60 @@ describe("createHeliusWebhookHandler", () => {
     );
   });
 
+  it("rejects payloads with too many unique signatures", async () => {
+    const verifyAndPersist = vi.fn();
+    const handler = createHeliusWebhookHandler({
+      getEnv: getEnv(webhookEnv),
+      logger: logger(),
+      verifyAndPersist,
+    });
+
+    const response = await handler(
+      jsonRequest(
+        Array.from({ length: 26 }, (_, index) => ({
+          signature: `sig-${index}`,
+        })),
+        { "X-EventSeal-Webhook-Secret": "webhook-secret" },
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await jsonBody(response)).toEqual({
+      error: "Webhook payload must include no more than 25 unique signatures",
+    });
+    expect(verifyAndPersist).not.toHaveBeenCalled();
+  });
+
+  it("limits concurrent webhook verification work", async () => {
+    let active = 0;
+    let maxActive = 0;
+    const verifyAndPersist = vi.fn(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active -= 1;
+      return verificationResult;
+    });
+    const handler = createHeliusWebhookHandler({
+      getEnv: getEnv(webhookEnv),
+      logger: logger(),
+      verifyAndPersist,
+    });
+
+    const response = await handler(
+      jsonRequest(
+        Array.from({ length: 10 }, (_, index) => ({
+          signature: `sig-${index}`,
+        })),
+        { "X-EventSeal-Webhook-Secret": "webhook-secret" },
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(verifyAndPersist).toHaveBeenCalledTimes(10);
+    expect(maxActive).toBeLessThanOrEqual(4);
+  });
+
   it("rejects malformed webhook payloads", async () => {
     const handler = createHeliusWebhookHandler({
       getEnv: getEnv(webhookEnv),

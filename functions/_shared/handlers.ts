@@ -19,6 +19,9 @@ import {
 
 type GetEnv = (name: string) => string | undefined;
 
+const HELIUS_WEBHOOK_MAX_SIGNATURES = 25;
+const HELIUS_WEBHOOK_VERIFY_CONCURRENCY = 4;
+
 interface Logger {
   error(message: string, ...details: unknown[]): void;
 }
@@ -219,13 +222,20 @@ export function createHeliusWebhookHandler({
     if (!payloadValidation.ok) {
       return errorResponse(payloadValidation.error, 400, responseHeaders);
     }
+    if (payloadValidation.value.length > HELIUS_WEBHOOK_MAX_SIGNATURES) {
+      return errorResponse(
+        `Webhook payload must include no more than ${HELIUS_WEBHOOK_MAX_SIGNATURES} unique signatures`,
+        400,
+        responseHeaders,
+      );
+    }
 
     try {
       const configuration = readHeliusConfiguration(getEnv);
-      const results = await Promise.all(
-        payloadValidation.value.map((signature) =>
-          verifyAndPersist({ ...configuration, signature }),
-        ),
+      const results = await mapWithConcurrency(
+        payloadValidation.value,
+        HELIUS_WEBHOOK_VERIFY_CONCURRENCY,
+        (signature) => verifyAndPersist({ ...configuration, signature }),
       );
 
       return jsonResponse(
@@ -256,4 +266,29 @@ function readHeliusConfiguration(
   }
 
   return configuration.value;
+}
+
+async function mapWithConcurrency<T, U>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<U>,
+): Promise<U[]> {
+  const results: U[] = new Array(items.length);
+  let nextIndex = 0;
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (true) {
+        const index = nextIndex;
+        nextIndex += 1;
+
+        if (index >= items.length) return;
+        results[index] = await mapper(items[index] as T);
+      }
+    },
+  );
+
+  await Promise.all(workers);
+  return results;
 }
