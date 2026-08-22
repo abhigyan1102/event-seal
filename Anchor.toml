@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-event_seal_demo = "Fg6PaFpoGXkYsidMpWxqSWYbe2y1yVt9xEoBNHZsXcyB"
+event_seal_demo = "AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS"
 
 [programs.localnet]
-event_seal_demo = "Fg6PaFpoGXkYsidMpWxqSWYbe2y1yVt9xEoBNHZsXcyB"
+event_seal_demo = "AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS"
 
 [provider]
 cluster = "Localnet"
@@ -17,4 +17,3 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "npm run test"
-

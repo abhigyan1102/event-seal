@@ -215,11 +215,23 @@ The Anchor program exposes two instructions that emit the same `DemoEvent` paylo
 
 This creates a controlled pair of transactions for proving that log bytes alone are insufficient verification evidence.
 
+Public devnet identity:
+
+| Field                    | Value                                          |
+| ------------------------ | ---------------------------------------------- |
+| Program ID               | `AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS` |
+| Event                    | `DemoEvent { nonce: u64 }`                     |
+| Anchor log discriminator | `bf91ff47ac4cb187`                             |
+| Event format             | `anchor-log`                                   |
+
+See [`docs/devnet-demo-program.md`](./docs/devnet-demo-program.md) for the public deployment record and acceptance signatures.
+
 ```bash
+cargo test --workspace
 anchor build
-anchor keys sync
-anchor test
 ```
+
+Building from a fresh checkout does not reproduce or authorize the published program identity. Redeployment requires the existing program keypair from secure operator storage and a wallet that controls the recorded upgrade authority; neither keypair belongs in the repository. The deployment guide includes mandatory identity checks before `anchor deploy`.
 
 ## Current support
 
