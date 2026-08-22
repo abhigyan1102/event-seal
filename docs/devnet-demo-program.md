@@ -18,7 +18,9 @@ This proves the product boundary: matching log bytes are not enough. EventSeal m
 | Anchor log discriminator   | `bf91ff47ac4cb187`                             |
 | Supported EventSeal format | `anchor-log`                                   |
 
-The program keypair lives at `target/deploy/event_seal_demo-keypair.json` during local builds and is intentionally ignored by Git. Do not commit program keypairs, deployment authority keypairs, wallet files, or RPC credentials.
+The deployed program keypair is retained in secure operator storage and is intentionally excluded from Git. An authorized operator must restore it to `target/deploy/event_seal_demo-keypair.json` before redeploying this public identity. A newly generated keypair has a different address and cannot reproduce the deployment recorded below.
+
+Do not commit program keypairs, deployment authority keypairs, wallet files, or RPC credentials.
 
 ## Deployment record
 
@@ -29,18 +31,43 @@ The program keypair lives at `target/deploy/event_seal_demo-keypair.json` during
 | Last deployed slot | `486609086`                                                                                |
 | Upgrade authority  | `3jEQQdxEhBpAWqFXswocXByBzGNRfKsBKcAZXDzjVCa4`                                             |
 
-## Build and deploy
+## Build from a fresh checkout
+
+```bash
+cargo test --workspace
+anchor build
+```
+
+These commands validate the source and build artifacts. They do not grant authority to redeploy the existing devnet program.
+
+## Redeploy the existing public identity
+
+Restore the existing program keypair from secure operator storage, select the devnet cluster, and verify both public identities before deploying:
 
 ```bash
 solana config set --url devnet
-solana-keygen new --no-bip39-passphrase --outfile target/deploy/event_seal_demo-keypair.json
-solana-keygen pubkey target/deploy/event_seal_demo-keypair.json
-cargo test --workspace
-anchor build
-anchor deploy --provider.cluster devnet
+export EVENTSEAL_DEPLOYER_KEYPAIR=/secure/path/to/devnet-upgrade-authority.json
+export EVENTSEAL_PROGRAM_KEYPAIR=target/deploy/event_seal_demo-keypair.json
+solana-keygen pubkey "$EVENTSEAL_DEPLOYER_KEYPAIR"
+solana-keygen pubkey "$EVENTSEAL_PROGRAM_KEYPAIR"
 ```
 
-If a new program keypair is generated, update `declare_id!`, `Anchor.toml`, this document, and SDK test fixtures before building or deploying.
+The commands must print these values:
+
+- Deployment wallet: `3jEQQdxEhBpAWqFXswocXByBzGNRfKsBKcAZXDzjVCa4`
+- Program keypair: `AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS`
+
+Stop if either value differs. With both identities confirmed, deploy the named program explicitly:
+
+```bash
+anchor deploy \
+  --program-name event_seal_demo \
+  --program-keypair "$EVENTSEAL_PROGRAM_KEYPAIR" \
+  --provider.cluster devnet \
+  --provider.wallet "$EVENTSEAL_DEPLOYER_KEYPAIR"
+```
+
+Generating a fresh keypair is an identity rotation, not a redeployment. A rotation requires updating `declare_id!`, `Anchor.toml`, this document, and SDK fixtures together, followed by a new deployment and acceptance record.
 
 ## Acceptance proof
 

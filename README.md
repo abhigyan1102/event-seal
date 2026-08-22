@@ -229,10 +229,9 @@ See [`docs/devnet-demo-program.md`](./docs/devnet-demo-program.md) for the publi
 ```bash
 cargo test --workspace
 anchor build
-anchor deploy --provider.cluster devnet
 ```
 
-The program keypair is generated locally at `target/deploy/event_seal_demo-keypair.json` and must never be committed. The deployment authority wallet is operator-owned and must also remain outside the repository.
+Building from a fresh checkout does not reproduce or authorize the published program identity. Redeployment requires the existing program keypair from secure operator storage and a wallet that controls the recorded upgrade authority; neither keypair belongs in the repository. The deployment guide includes mandatory identity checks before `anchor deploy`.
 
 ## Current support
 
