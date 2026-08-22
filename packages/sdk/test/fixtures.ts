@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 /** Canonical expected program ID (matches the demo Anchor program). */
-export const EXPECTED_PROGRAM = "Fg6PaFpoGXkYsidMpWxqSWYbe2y1yVt9xEoBNHZsXcyB";
+export const EXPECTED_PROGRAM = "AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS";
 
 /** An attacker or unrelated program ID. */
 export const ATTACKER_PROGRAM = "11111111111111111111111111111111";
@@ -19,14 +19,14 @@ export const ATTACKER_PROGRAM = "11111111111111111111111111111111";
 export const OUTER_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 /** 8-byte discriminator as 16 lowercase hex characters. */
-export const DISCRIMINATOR = "0102030405060708";
+export const DISCRIMINATOR = "bf91ff47ac4cb187";
 
 /** A different valid discriminator. */
 export const WRONG_DISCRIMINATOR = "aabbccddeeff0011";
 
-/** 10-byte event payload (discriminator + 2 bytes data), base64-encoded. */
+/** DemoEvent payload for nonce 42 (discriminator + u64 little-endian nonce). */
 export const EVENT_DATA_B64 = Buffer.from(
-  "0102030405060708090a",
+  "bf91ff47ac4cb1872a00000000000000",
   "hex",
 ).toString("base64");
 

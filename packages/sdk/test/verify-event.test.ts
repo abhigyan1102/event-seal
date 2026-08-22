@@ -6,6 +6,7 @@ import type { VerifyEventInput } from "../src/types.js";
 
 import {
   DISCRIMINATOR,
+  EVENT_DATA_B64,
   EXPECTED_PROGRAM,
   confirmedOnlyTx,
   finalizedFailedTx,
@@ -282,7 +283,7 @@ describe("verifyEvent", () => {
       mockFetch(() =>
         finalizedSuccessTx([
           `Program 11111111111111111111111111111111 invoke [1]`,
-          `Program data: ${Buffer.from("0102030405060708090a", "hex").toString("base64")}`,
+          `Program data: ${EVENT_DATA_B64}`,
           `Program 11111111111111111111111111111111 success`,
         ]),
       );
@@ -327,8 +328,8 @@ describe("verifyEvent", () => {
       mockFetch(() =>
         finalizedSuccessTx([
           `Program ${EXPECTED_PROGRAM} invoke [1]`,
-          `Program data: ${Buffer.from("0102030405060708090a", "hex").toString("base64")}`,
-          `Program data: ${Buffer.from("0102030405060708090a", "hex").toString("base64")}`,
+          `Program data: ${EVENT_DATA_B64}`,
+          `Program data: ${EVENT_DATA_B64}`,
           `Program ${EXPECTED_PROGRAM} success`,
         ]),
       );

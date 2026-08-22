@@ -215,11 +215,24 @@ The Anchor program exposes two instructions that emit the same `DemoEvent` paylo
 
 This creates a controlled pair of transactions for proving that log bytes alone are insufficient verification evidence.
 
+Public devnet identity:
+
+| Field                    | Value                                          |
+| ------------------------ | ---------------------------------------------- |
+| Program ID               | `AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS` |
+| Event                    | `DemoEvent { nonce: u64 }`                     |
+| Anchor log discriminator | `bf91ff47ac4cb187`                             |
+| Event format             | `anchor-log`                                   |
+
+See [`docs/devnet-demo-program.md`](./docs/devnet-demo-program.md) for the public deployment record and acceptance signatures.
+
 ```bash
+cargo test --workspace
 anchor build
-anchor keys sync
-anchor test
+anchor deploy --provider.cluster devnet
 ```
+
+The program keypair is generated locally at `target/deploy/event_seal_demo-keypair.json` and must never be committed. The deployment authority wallet is operator-owned and must also remain outside the repository.
 
 ## Current support
 
