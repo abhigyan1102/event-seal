@@ -235,13 +235,20 @@ async function assertDevnet(client) {
   }
 }
 
-async function submitInstruction(client, instruction, nonce, expectFailure) {
+export async function submitInstruction(
+  client,
+  instruction,
+  nonce,
+  expectFailure,
+) {
   let result;
   try {
-    result = await client.sendTransaction({
-      programAddress: address(PROGRAM_ID),
-      data: buildInstructionData(instruction, nonce),
-    });
+    result = await client.sendTransaction([
+      {
+        programAddress: address(PROGRAM_ID),
+        data: buildInstructionData(instruction, nonce),
+      },
+    ]);
   } catch (error) {
     if (!expectFailure) {
       throw error;

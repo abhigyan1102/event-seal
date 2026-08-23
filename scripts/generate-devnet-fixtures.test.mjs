@@ -10,6 +10,7 @@ import {
   buildInstructionData,
   parseCliArgs,
   parseDemoEventLogs,
+  submitInstruction,
 } from "./generate-devnet-fixtures.mjs";
 
 function demoPayload(nonce, discriminator = EVENT_DISCRIMINATOR) {
@@ -44,6 +45,30 @@ describe("devnet fixture generator", () => {
     expect(data).toHaveLength(16);
     expect(data.subarray(0, 8)).toEqual(discriminator);
     expect(data.readBigUInt64LE(8)).toBe(42n);
+  });
+
+  it("submits a single instruction as a transaction instruction array", async () => {
+    let submittedInstructions;
+    const client = {
+      sendTransaction: async (instructions) => {
+        submittedInstructions = instructions;
+        return {
+          kind: "single",
+          status: "successful",
+          context: { signature: "success-signature" },
+        };
+      },
+    };
+
+    await expect(
+      submitInstruction(client, "emit_success", 42, false),
+    ).resolves.toBe("success-signature");
+
+    expect(submittedInstructions).toHaveLength(1);
+    expect(submittedInstructions[0].programAddress).toBe(PROGRAM_ID);
+    expect(Buffer.from(submittedInstructions[0].data)).toEqual(
+      Buffer.from(buildInstructionData("emit_success", 42)),
+    );
   });
 
   it("attributes and decodes the demo event under the expected program frame", () => {

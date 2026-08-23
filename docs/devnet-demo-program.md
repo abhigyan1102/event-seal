@@ -82,8 +82,8 @@ Current public proof:
 
 | Instruction          | Signature                                                                                  | Slot        | Observed transaction state     | EventSeal verdict                                                                             |
 | -------------------- | ------------------------------------------------------------------------------------------ | ----------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `emit_success(42)`   | `3r6sxr6HnG7Rqeqz7xc7ZtHS3DgHG6QRQpJBGDkNjSfBeTWGSatKZkEtQh4kjb2jckHq68EQ2W4HwUzVd9Cxja3A` | `486609883` | `Status: Ok`                   | `verified` with receipt `es_27714c6c4ba16ae77d6d781c7a5ff7cb89359b2e3e1f149ac6bc6d8ca9c59257` |
-| `emit_then_fail(43)` | `39cALQAV4aE5DWpLfDiUgHmh2WwXh4WDgdX2a7aUs3cWYMgms2WqSyo374q7L8EQMgsRLZ8WEoH9PiM7uMEc4bC2` | `486610291` | `custom program error: 0x1770` | `rejected` with `TX_FAILED`                                                                   |
+| `emit_success(42)`   | `QJ1ZzYcBMQbU1DHmaFedXMPGiFXyBX5h5pkx17BvXC6SWXdgAemsUqAQNs7qaLSn4zWdt1cUQbrcxcbRkZM3Uc1`  | `486941646` | `Status: Ok`                   | `verified` with receipt `es_27714c6c4ba16ae77d6d781c7a5ff7cb89359b2e3e1f149ac6bc6d8ca9c59257` |
+| `emit_then_fail(43)` | `45K9yJVaCjQMRVwxhHeUUP1Bx6fefh2kDaSFhWrguNHNYiogf2UPm9wLsSj1wJK1LNtqifM1hPsqQcuUBiZVD3yt` | `486941689` | `custom program error: 0x1770` | `rejected` with `TX_FAILED`                                                                   |
 
 Both transactions include one `Program data:` line for the `DemoEvent` discriminator. The failed transaction is intentionally submitted with preflight disabled so Solana records the emitted log and failed execution metadata.
 
