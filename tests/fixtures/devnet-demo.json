@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-23T09:37:51.300Z",
+  "cluster": "devnet",
+  "programId": "AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS",
+  "event": {
+    "name": "DemoEvent",
+    "format": "anchor-log",
+    "discriminator": "bf91ff47ac4cb187",
+    "schema": {
+      "nonce": "u64"
+    }
+  },
+  "transactions": {
+    "success": {
+      "instruction": "emit_success",
+      "nonce": 42,
+      "signature": "QJ1ZzYcBMQbU1DHmaFedXMPGiFXyBX5h5pkx17BvXC6SWXdgAemsUqAQNs7qaLSn4zWdt1cUQbrcxcbRkZM3Uc1",
+      "slot": 486941646,
+      "transactionSucceeded": true,
+      "expectedVerdict": "verified",
+      "expectedReasonCode": "VERIFIED"
+    },
+    "failure": {
+      "instruction": "emit_then_fail",
+      "nonce": 43,
+      "signature": "45K9yJVaCjQMRVwxhHeUUP1Bx6fefh2kDaSFhWrguNHNYiogf2UPm9wLsSj1wJK1LNtqifM1hPsqQcuUBiZVD3yt",
+      "slot": 486941689,
+      "transactionSucceeded": false,
+      "expectedVerdict": "rejected",
+      "expectedReasonCode": "TX_FAILED"
+    }
+  }
+}

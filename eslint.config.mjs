@@ -86,6 +86,7 @@ export default tseslint.config(
   {
     files: [
       "eslint.config.mjs",
+      "scripts/**/*.mjs",
       "packages/**/*.test.ts",
       "packages/**/test/**/*.ts",
     ],

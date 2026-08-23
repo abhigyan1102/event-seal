@@ -9,3 +9,17 @@ Verifier integration tests use captured Solana RPC responses instead of dependin
 - incomplete metadata and truncated logs.
 
 Each fixture records its cluster, signature, slot, RPC retrieval date, and expected verdict. Fixtures must be sanitized, deterministic, and contain no provider credentials.
+
+## Regenerate the devnet demo fixture
+
+An authorized operator with a funded devnet fee payer can submit both demo instructions and replace the public fixture without editing source code:
+
+```bash
+npm run fixtures:devnet -- --keypair /secure/path/to/devnet-fee-payer.json
+```
+
+The default keypair is `~/.config/solana/id.json`. Use `--rpc-url` for a private devnet RPC endpoint, `--output` for an alternate destination, or `--success-nonce` and `--failure-nonce` to override the demo values. Run `npm run fixtures:devnet -- --help` for the complete interface.
+
+The script verifies the endpoint's devnet genesis hash, checks that the demo program is executable, waits for finalized metadata, validates the expected transaction outcomes, and attributes the decoded event payload to the demo program before writing. It writes only public evidence: cluster, program ID, event format and discriminator, nonces, signatures, slots, and expected verdicts. It never writes keypair bytes, keypair paths, RPC URLs, or credentials.
+
+Do not commit fee-payer or program keypairs. The failed transaction is intentionally sent with preflight disabled so its emitted event and failed transaction metadata are recorded on devnet.
