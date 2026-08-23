@@ -109,3 +109,5 @@ INSFORGE_BASE_URL=https://your-project.region.insforge.app npm run smoke:devnet-
 ```
 
 The smoke invokes `verify-event` for both fixture signatures, fetches the successful verification through `get-receipt`, and fails if the failed transaction can produce a verified verdict or receipt ID. The optional output is sanitized public evidence only.
+
+Each hosted backend request times out after 30 seconds by default; pass `--timeout-ms` to override that limit for an operator run.

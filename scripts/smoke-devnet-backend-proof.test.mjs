@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildVerifyInput,
@@ -129,6 +129,9 @@ describe("devnet backend proof smoke", () => {
       `https://eventseal.test/functions/get-receipt?receiptId=${receiptId}`,
       "https://eventseal.test/functions/verify-event",
     ]);
+    expect(calls.every((call) => call.init.signal instanceof AbortSignal)).toBe(
+      true,
+    );
     expect(proof.transactions.success).toMatchObject({
       signature: "success-signature",
       verdict: "verified",
@@ -172,10 +175,56 @@ describe("devnet backend proof smoke", () => {
     );
 
     const proof = JSON.parse(await readFile(output, "utf8"));
+    expect(proof.sourceFixture).toBe(path);
     expect(proof.transactions.success.receiptId).toBe(receiptId);
     expect(JSON.stringify(proof)).not.toMatch(
       /keypair|api.?key|secret|private|rpc.?url|credential/i,
     );
+  });
+
+  it("rejects fixture-controlled noncanonical verdict expectations before requests", async () => {
+    const { path } = await writeFixture({
+      ...fixture,
+      transactions: {
+        ...fixture.transactions,
+        success: {
+          ...fixture.transactions.success,
+          expectedVerdict: "rejected",
+          expectedReasonCode: "TX_FAILED",
+        },
+      },
+    });
+    const fetchFn = vi.fn();
+
+    await expect(
+      runBackendProofSmoke(
+        { baseUrl: "https://eventseal.test", fixture: path },
+        fetchFn,
+      ),
+    ).rejects.toThrow("success fixture expectedVerdict mismatch");
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("aborts stalled backend requests at the configured timeout", async () => {
+    const { path } = await writeFixture();
+    const fetchFn = async (_url, init) => {
+      return await new Promise((_resolve, reject) => {
+        init.signal.addEventListener(
+          "abort",
+          () => reject(init.signal.reason),
+          {
+            once: true,
+          },
+        );
+      });
+    };
+
+    await expect(
+      runBackendProofSmoke(
+        { baseUrl: "https://eventseal.test", fixture: path, timeoutMs: 1 },
+        fetchFn,
+      ),
+    ).rejects.toBeTruthy();
   });
 
   it("rejects a failed transaction that verifies or returns a receipt", async () => {
@@ -248,12 +297,15 @@ describe("devnet backend proof smoke", () => {
       "/tmp/fixture.json",
       "--output",
       "/tmp/proof.json",
+      "--timeout-ms",
+      "1234",
     ]);
 
     expect(options).toMatchObject({
       baseUrl: "https://eventseal.test",
       fixture: "/tmp/fixture.json",
       output: "/tmp/proof.json",
+      timeoutMs: 1234,
     });
   });
 });

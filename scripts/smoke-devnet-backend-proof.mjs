@@ -1,10 +1,21 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_FIXTURE = "tests/fixtures/devnet-demo.json";
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 const RECEIPT_ID_PATTERN = /^es_[0-9a-f]{64}$/;
+const EXPECTED_TRANSACTIONS = Object.freeze({
+  success: {
+    verdict: "verified",
+    reasonCode: "VERIFIED",
+  },
+  failure: {
+    verdict: "rejected",
+    reasonCode: "TX_FAILED",
+  },
+});
 
 export function parseCliArgs(argv) {
   const { values } = parseArgs({
@@ -15,6 +26,7 @@ export function parseCliArgs(argv) {
       "base-url": { type: "string" },
       fixture: { type: "string" },
       output: { type: "string", short: "o" },
+      "timeout-ms": { type: "string" },
     },
   });
 
@@ -23,6 +35,9 @@ export function parseCliArgs(argv) {
     baseUrl: values["base-url"] ?? process.env.INSFORGE_BASE_URL,
     fixture: resolve(values.fixture ?? DEFAULT_FIXTURE),
     output: values.output === undefined ? undefined : resolve(values.output),
+    timeoutMs: parseTimeoutMs(
+      values["timeout-ms"] ?? `${DEFAULT_REQUEST_TIMEOUT_MS}`,
+    ),
   };
 }
 
@@ -41,7 +56,9 @@ export function buildVerifyInput(fixture, transaction) {
 
 export async function runBackendProofSmoke(options, fetchFn = fetch) {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
+  const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const fixture = await readFixture(options.fixture);
+  const sourceFixture = formatFixturePath(options.fixture);
 
   validateFixture(fixture);
 
@@ -51,30 +68,45 @@ export async function runBackendProofSmoke(options, fetchFn = fetch) {
     fetchFn,
     baseUrl,
     buildVerifyInput(fixture, successFixture),
+    timeoutMs,
   );
 
   assertVerificationResult("success transaction", success, {
+    expected: EXPECTED_TRANSACTIONS.success,
     fixture,
     transaction: successFixture,
     requireReceipt: true,
   });
 
-  const receipt = await fetchReceipt(fetchFn, baseUrl, success.receiptId);
+  const receipt = await fetchReceipt(
+    fetchFn,
+    baseUrl,
+    success.receiptId,
+    timeoutMs,
+  );
   assertReceipt(receipt, success);
 
   const failure = await invokeVerification(
     fetchFn,
     baseUrl,
     buildVerifyInput(fixture, failureFixture),
+    timeoutMs,
   );
 
   assertVerificationResult("failed transaction", failure, {
+    expected: EXPECTED_TRANSACTIONS.failure,
     fixture,
     transaction: failureFixture,
     requireReceipt: false,
   });
 
-  const proof = buildProof({ fixture, receipt, success, failure });
+  const proof = buildProof({
+    failure,
+    fixture,
+    receipt,
+    sourceFixture,
+    success,
+  });
   if (options.output) {
     await writeProof(options.output, proof);
   }
@@ -86,6 +118,25 @@ function normalizeBaseUrl(value) {
     throw new Error("Set INSFORGE_BASE_URL or pass --base-url.");
   }
   return value.replace(/\/+$/, "");
+}
+
+function parseTimeoutMs(raw) {
+  if (!/^\d+$/.test(raw)) {
+    throw new Error("timeout-ms must be a positive integer");
+  }
+  const timeoutMs = Number(raw);
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
+    throw new Error("timeout-ms must be a positive integer");
+  }
+  return timeoutMs;
+}
+
+function formatFixturePath(path) {
+  const relativePath = relative(process.cwd(), path);
+  if (relativePath && !relativePath.startsWith("..") && relativePath !== path) {
+    return relativePath;
+  }
+  return path;
 }
 
 async function readFixture(path) {
@@ -108,11 +159,19 @@ function validateFixture(fixture) {
   if (!/^[0-9a-f]{16}$/.test(fixture.event.discriminator)) {
     throw new Error("Fixture event discriminator must be 16 lowercase hex");
   }
-  validateTransactionFixture(fixture.transactions?.success, "success");
-  validateTransactionFixture(fixture.transactions?.failure, "failure");
+  validateTransactionFixture(
+    fixture.transactions?.success,
+    "success",
+    EXPECTED_TRANSACTIONS.success,
+  );
+  validateTransactionFixture(
+    fixture.transactions?.failure,
+    "failure",
+    EXPECTED_TRANSACTIONS.failure,
+  );
 }
 
-function validateTransactionFixture(transaction, label) {
+function validateTransactionFixture(transaction, label, expected) {
   if (!isRecord(transaction)) {
     throw new Error(`Fixture is missing ${label} transaction`);
   }
@@ -122,27 +181,32 @@ function validateTransactionFixture(transaction, label) {
   if (!Number.isSafeInteger(transaction.slot) || transaction.slot < 0) {
     throw new Error(`${label} transaction has an invalid slot`);
   }
-  if (!isNonEmptyString(transaction.expectedVerdict)) {
-    throw new Error(`${label} transaction is missing expectedVerdict`);
-  }
-  if (!isNonEmptyString(transaction.expectedReasonCode)) {
-    throw new Error(`${label} transaction is missing expectedReasonCode`);
-  }
+  assertEqual(
+    transaction.expectedVerdict,
+    expected.verdict,
+    `${label} fixture expectedVerdict`,
+  );
+  assertEqual(
+    transaction.expectedReasonCode,
+    expected.reasonCode,
+    `${label} fixture expectedReasonCode`,
+  );
 }
 
-async function invokeVerification(fetchFn, baseUrl, input) {
+async function invokeVerification(fetchFn, baseUrl, input, timeoutMs) {
   return await requestJson(fetchFn, `${baseUrl}/functions/verify-event`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 }
 
-async function fetchReceipt(fetchFn, baseUrl, receiptId) {
+async function fetchReceipt(fetchFn, baseUrl, receiptId, timeoutMs) {
   return await requestJson(
     fetchFn,
     `${baseUrl}/functions/get-receipt?receiptId=${encodeURIComponent(receiptId)}`,
-    { method: "GET" },
+    { method: "GET", signal: AbortSignal.timeout(timeoutMs) },
   );
 }
 
@@ -168,7 +232,7 @@ async function readJsonBody(response) {
 }
 
 function assertVerificationResult(label, result, options) {
-  const { fixture, requireReceipt, transaction } = options;
+  const { expected, fixture, requireReceipt, transaction } = options;
   if (!isRecord(result)) throw new Error(`${label} returned a non-object body`);
   assertEqual(result.signature, transaction.signature, `${label} signature`);
   assertEqual(result.cluster, fixture.cluster, `${label} cluster`);
@@ -178,12 +242,8 @@ function assertVerificationResult(label, result, options) {
     `${label} expectedProgramId`,
   );
   assertEqual(result.slot, transaction.slot, `${label} slot`);
-  assertEqual(result.verdict, transaction.expectedVerdict, `${label} verdict`);
-  assertEqual(
-    result.reasonCode,
-    transaction.expectedReasonCode,
-    `${label} reasonCode`,
-  );
+  assertEqual(result.verdict, expected.verdict, `${label} verdict`);
+  assertEqual(result.reasonCode, expected.reasonCode, `${label} reasonCode`);
 
   if (requireReceipt) {
     if (
@@ -216,7 +276,7 @@ function assertReceipt(receipt, verification) {
   );
 }
 
-function buildProof({ fixture, receipt, success, failure }) {
+function buildProof({ failure, fixture, receipt, sourceFixture, success }) {
   return {
     schemaVersion: 1,
     checkedAt: new Date().toISOString(),
@@ -226,7 +286,7 @@ function buildProof({ fixture, receipt, success, failure }) {
       format: fixture.event.format,
       discriminator: fixture.event.discriminator,
     },
-    sourceFixture: "tests/fixtures/devnet-demo.json",
+    sourceFixture,
     transactions: {
       success: {
         signature: success.signature,
@@ -286,6 +346,7 @@ Usage:
 Options:
   --base-url <url>   Public InsForge base URL. Defaults to INSFORGE_BASE_URL.
   --fixture <path>   Devnet fixture JSON. Defaults to ${DEFAULT_FIXTURE}.
+  --timeout-ms <ms>  Per-request backend timeout. Defaults to ${DEFAULT_REQUEST_TIMEOUT_MS}.
   -o, --output       Optional sanitized proof JSON output path.
   -h, --help         Show this help text.
 

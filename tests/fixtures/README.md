@@ -33,3 +33,5 @@ INSFORGE_BASE_URL=https://your-project.region.insforge.app npm run smoke:devnet-
 ```
 
 The command invokes `verify-event` for both devnet fixture transactions, fetches the successful result through `get-receipt`, and fails if the intentionally failed transaction returns a verified verdict or any receipt ID. To record public evidence only, pass `--output tests/fixtures/devnet-backend-proof.json`. The output excludes wallet keypairs, API keys, RPC URLs, and credentials.
+
+Each backend request has a 30 second timeout by default. Use `--timeout-ms` to lower or raise that limit for a specific operator run.
