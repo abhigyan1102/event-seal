@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-08-23T14:41:09.359Z",
+  "cluster": "devnet",
+  "programId": "AMWm3XHjn6zVygWDX6J7DYPvvwQ6xy3mKKwspWJeuZVS",
+  "event": {
+    "format": "anchor-log",
+    "discriminator": "bf91ff47ac4cb187"
+  },
+  "sourceFixture": "tests/fixtures/devnet-demo.json",
+  "transactions": {
+    "success": {
+      "signature": "QJ1ZzYcBMQbU1DHmaFedXMPGiFXyBX5h5pkx17BvXC6SWXdgAemsUqAQNs7qaLSn4zWdt1cUQbrcxcbRkZM3Uc1",
+      "slot": 486941646,
+      "verdict": "verified",
+      "reasonCode": "VERIFIED",
+      "receiptId": "es_0a4b8d7aceadb04204c5f91fcadbc448df272a8c9bccd404eafcaa4c9c1dc02f",
+      "receiptLookup": {
+        "receiptId": "es_0a4b8d7aceadb04204c5f91fcadbc448df272a8c9bccd404eafcaa4c9c1dc02f",
+        "verdict": "verified",
+        "reasonCode": "VERIFIED"
+      }
+    },
+    "failure": {
+      "signature": "45K9yJVaCjQMRVwxhHeUUP1Bx6fefh2kDaSFhWrguNHNYiogf2UPm9wLsSj1wJK1LNtqifM1hPsqQcuUBiZVD3yt",
+      "slot": 486941689,
+      "verdict": "rejected",
+      "reasonCode": "TX_FAILED",
+      "receiptId": null
+    }
+  }
+}

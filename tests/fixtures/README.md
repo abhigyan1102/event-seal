@@ -23,3 +23,13 @@ The default keypair is `~/.config/solana/id.json`. Use `--rpc-url` for a private
 The script verifies the endpoint's devnet genesis hash, checks that the demo program is executable, waits for finalized metadata, validates the expected transaction outcomes, and attributes the decoded event payload to the demo program before writing. It writes only public evidence: cluster, program ID, event format and discriminator, nonces, signatures, slots, and expected verdicts. It never writes keypair bytes, keypair paths, RPC URLs, or credentials.
 
 Do not commit fee-payer or program keypairs. The failed transaction is intentionally sent with preflight disabled so its emitted event and failed transaction metadata are recorded on devnet.
+
+## Prove the hosted backend against devnet
+
+After `tests/fixtures/devnet-demo.json` exists and the InsForge functions are deployed, an operator can run the opt-in backend smoke:
+
+```bash
+INSFORGE_BASE_URL=https://your-project.region.insforge.app npm run smoke:devnet-backend
+```
+
+The command invokes `verify-event` for both devnet fixture transactions, fetches the successful result through `get-receipt`, and fails if the intentionally failed transaction returns a verified verdict or any receipt ID. To record public evidence only, pass `--output tests/fixtures/devnet-backend-proof.json`. The output excludes wallet keypairs, API keys, RPC URLs, and credentials.
