@@ -86,3 +86,16 @@ Current public proof:
 | `emit_then_fail(43)` | `39cALQAV4aE5DWpLfDiUgHmh2WwXh4WDgdX2a7aUs3cWYMgms2WqSyo374q7L8EQMgsRLZ8WEoH9PiM7uMEc4bC2` | `486610291` | `custom program error: 0x1770` | `rejected` with `TX_FAILED`                                                                   |
 
 Both transactions include one `Program data:` line for the `DemoEvent` discriminator. The failed transaction is intentionally submitted with preflight disabled so Solana records the emitted log and failed execution metadata.
+
+## Regenerate the public fixture
+
+From a fresh checkout, install dependencies and run the fixture generator with a funded devnet fee payer:
+
+```bash
+npm ci
+npm run fixtures:devnet -- --keypair /secure/path/to/devnet-fee-payer.json
+```
+
+The operator may override the RPC endpoint, output path, and both nonces through command-line flags; run `npm run fixtures:devnet -- --help` for details. No source edits or program deployment keypair are required. The generated fixture is written to `tests/fixtures/devnet-demo.json` after both transactions finalize and their event attribution and transaction outcomes are validated.
+
+Never pass a keypair through a command-line value other than its filesystem path, and never commit or paste its JSON contents. The generated fixture contains public on-chain evidence only.
