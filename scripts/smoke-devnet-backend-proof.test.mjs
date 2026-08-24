@@ -175,11 +175,39 @@ describe("devnet backend proof smoke", () => {
     );
 
     const proof = JSON.parse(await readFile(output, "utf8"));
-    expect(proof.sourceFixture).toBe(path);
+    expect(proof.sourceFixture).toBe("[external fixture path redacted]");
     expect(proof.transactions.success.receiptId).toBe(receiptId);
     expect(JSON.stringify(proof)).not.toMatch(
       /keypair|api.?key|secret|private|rpc.?url|credential/i,
     );
+  });
+
+  it("preserves repository fixture provenance as a relative path", async () => {
+    const repoFixturePath = "tests/fixtures/devnet-demo.json";
+    const repoFixture = JSON.parse(await readFile(repoFixturePath, "utf8"));
+    const success = verificationResponse(
+      repoFixture.transactions.success,
+      receiptId,
+    );
+    const failure = verificationResponse(repoFixture.transactions.failure);
+    const fetchFn = async (url, init) => {
+      if (url.endsWith("/functions/verify-event")) {
+        return response(
+          JSON.parse(init.body).signature ===
+            repoFixture.transactions.success.signature
+            ? success
+            : failure,
+        );
+      }
+      return response(receiptResponse(success));
+    };
+
+    const proof = await runBackendProofSmoke(
+      { baseUrl: "https://eventseal.test", fixture: repoFixturePath },
+      fetchFn,
+    );
+
+    expect(proof.sourceFixture).toBe(repoFixturePath);
   });
 
   it("rejects fixture-controlled noncanonical verdict expectations before requests", async () => {

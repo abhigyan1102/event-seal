@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 
 const DEFAULT_FIXTURE = "tests/fixtures/devnet-demo.json";
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+const EXTERNAL_FIXTURE_SOURCE = "[external fixture path redacted]";
 const RECEIPT_ID_PATTERN = /^es_[0-9a-f]{64}$/;
 const EXPECTED_TRANSACTIONS = Object.freeze({
   success: {
@@ -56,9 +57,10 @@ export function buildVerifyInput(fixture, transaction) {
 
 export async function runBackendProofSmoke(options, fetchFn = fetch) {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
+  const fixturePath = resolve(options.fixture);
   const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-  const fixture = await readFixture(options.fixture);
-  const sourceFixture = formatFixturePath(options.fixture);
+  const fixture = await readFixture(fixturePath);
+  const sourceFixture = formatFixturePath(fixturePath);
 
   validateFixture(fixture);
 
@@ -136,7 +138,7 @@ function formatFixturePath(path) {
   if (relativePath && !relativePath.startsWith("..") && relativePath !== path) {
     return relativePath;
   }
-  return path;
+  return EXTERNAL_FIXTURE_SOURCE;
 }
 
 async function readFixture(path) {
