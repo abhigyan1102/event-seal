@@ -82,7 +82,7 @@ Current public proof:
 
 | Instruction          | Signature                                                                                  | Slot        | Observed transaction state     | EventSeal verdict                                                                             |
 | -------------------- | ------------------------------------------------------------------------------------------ | ----------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `emit_success(42)`   | `QJ1ZzYcBMQbU1DHmaFedXMPGiFXyBX5h5pkx17BvXC6SWXdgAemsUqAQNs7qaLSn4zWdt1cUQbrcxcbRkZM3Uc1`  | `486941646` | `Status: Ok`                   | `verified` with receipt `es_27714c6c4ba16ae77d6d781c7a5ff7cb89359b2e3e1f149ac6bc6d8ca9c59257` |
+| `emit_success(42)`   | `QJ1ZzYcBMQbU1DHmaFedXMPGiFXyBX5h5pkx17BvXC6SWXdgAemsUqAQNs7qaLSn4zWdt1cUQbrcxcbRkZM3Uc1`  | `486941646` | `Status: Ok`                   | `verified` with receipt `es_0a4b8d7aceadb04204c5f91fcadbc448df272a8c9bccd404eafcaa4c9c1dc02f` |
 | `emit_then_fail(43)` | `45K9yJVaCjQMRVwxhHeUUP1Bx6fefh2kDaSFhWrguNHNYiogf2UPm9wLsSj1wJK1LNtqifM1hPsqQcuUBiZVD3yt` | `486941689` | `custom program error: 0x1770` | `rejected` with `TX_FAILED`                                                                   |
 
 Both transactions include one `Program data:` line for the `DemoEvent` discriminator. The failed transaction is intentionally submitted with preflight disabled so Solana records the emitted log and failed execution metadata.
@@ -99,3 +99,15 @@ npm run fixtures:devnet -- --keypair /secure/path/to/devnet-fee-payer.json
 The operator may override the RPC endpoint, output path, and both nonces through command-line flags; run `npm run fixtures:devnet -- --help` for details. No source edits or program deployment keypair are required. The generated fixture is written to `tests/fixtures/devnet-demo.json` after both transactions finalize and their event attribution and transaction outcomes are validated.
 
 Never pass a keypair through a command-line value other than its filesystem path, and never commit or paste its JSON contents. The generated fixture contains public on-chain evidence only.
+
+## Prove the hosted backend
+
+After regenerating the devnet fixture and deploying the hosted InsForge functions, run the opt-in backend proof smoke:
+
+```bash
+INSFORGE_BASE_URL=https://your-project.region.insforge.app npm run smoke:devnet-backend -- --output tests/fixtures/devnet-backend-proof.json
+```
+
+The smoke invokes `verify-event` for both fixture signatures, fetches the successful verification through `get-receipt`, and fails if the failed transaction can produce a verified verdict or receipt ID. The optional output is sanitized public evidence only.
+
+Each hosted backend request times out after 30 seconds by default; pass `--timeout-ms` to override that limit for an operator run.
