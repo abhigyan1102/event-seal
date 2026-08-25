@@ -8,6 +8,7 @@ export default tseslint.config(
   {
     ignores: [
       "**/dist/**",
+      "**/.next/**",
       "**/node_modules/**",
       "**/.anchor/**",
       "**/coverage/**",
@@ -79,6 +80,14 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+    },
+  },
+
+  // Next.js server entry points use Node globals.
+  {
+    files: ["apps/web/app/api/**/*.ts", "apps/web/next.config.ts"],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 
