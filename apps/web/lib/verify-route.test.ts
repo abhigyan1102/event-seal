@@ -91,6 +91,48 @@ describe("createVerifyRoute", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  it("stops reading an undeclared oversized request body", async () => {
+    const invoke = vi.fn();
+    let pullCount = 0;
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pullCount += 1;
+        controller.enqueue(new Uint8Array(1_024));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const response = await createVerifyRoute(invoke)(
+      new Request("http://localhost/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" }),
+    );
+
+    expect(response.status).toBe(413);
+    expect(cancelled).toBe(true);
+    expect(pullCount).toBeLessThan(10);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed successful upstream results", async () => {
+    const response = await createVerifyRoute(() =>
+      Promise.resolve({
+        ...verifiedResult,
+        evidence: { check: "metadata", passed: true, detail: "present" },
+      } as unknown as VerificationResult),
+    )(jsonRequest(validInput));
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({
+      error: "Verification failed",
+    });
+  });
+
   it("returns a safe unavailable response when configuration is missing", async () => {
     const response = await createVerifyRoute(() =>
       Promise.reject(new VerificationAdapterError("NOT_CONFIGURED")),

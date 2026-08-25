@@ -1,6 +1,7 @@
 import type { VerificationResult } from "@eventseal/sdk";
 
 import type { BrowserVerifyEventInput } from "./verification-request";
+import { isVerificationResult } from "./verification-result";
 
 export async function requestVerification(
   input: BrowserVerifyEventInput,
@@ -16,10 +17,10 @@ export async function requestVerification(
   if (!response.ok) {
     throw new Error(readError(body) ?? "Verification failed.");
   }
-  if (!isRecord(body)) {
+  if (!isVerificationResult(body)) {
     throw new Error("The verifier returned an invalid response.");
   }
-  return body as unknown as VerificationResult;
+  return body;
 }
 
 function readError(value: unknown): string | undefined {
