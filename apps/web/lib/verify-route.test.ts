@@ -64,6 +64,34 @@ describe("createVerifyRoute", () => {
     });
   });
 
+  it("rejects media types that only start with application/json", async () => {
+    const invoke = vi.fn();
+    const response = await createVerifyRoute(invoke)(
+      new Request("http://localhost/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/jsonp" },
+        body: JSON.stringify(validInput),
+      }),
+    );
+
+    expect(response.status).toBe(415);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("accepts case-insensitive JSON media types with parameters", async () => {
+    const invoke = vi.fn().mockResolvedValue(verifiedResult);
+    const response = await createVerifyRoute(invoke)(
+      new Request("http://localhost/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "Application/JSON; charset=utf-8" },
+        body: JSON.stringify(validInput),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(invoke).toHaveBeenCalledWith(validInput);
+  });
+
   it("rejects invalid JSON before invoking the backend", async () => {
     const invoke = vi.fn();
     const response = await createVerifyRoute(invoke)(

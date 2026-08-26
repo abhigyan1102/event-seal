@@ -24,7 +24,8 @@ export class VerificationAdapterError extends Error {
 export function createVerifyRoute(invokeVerification: InvokeVerification) {
   return async function POST(request: Request): Promise<Response> {
     const contentType = request.headers.get("content-type") ?? "";
-    if (!contentType.toLowerCase().startsWith("application/json")) {
+    const mediaType = contentType.split(";", 1)[0]?.trim().toLowerCase();
+    if (mediaType !== "application/json") {
       return errorResponse("Content-Type must be application/json", 415);
     }
 

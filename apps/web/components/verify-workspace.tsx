@@ -26,6 +26,12 @@ export function VerifyWorkspace() {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
+  function updateRequest(nextRequest: BrowserVerifyEventInput) {
+    setRequest(nextRequest);
+    setResult(undefined);
+    setError(undefined);
+  }
+
   useGSAP(
     () => {
       const reducedMotion = window.matchMedia(
@@ -107,12 +113,16 @@ export function VerifyWorkspace() {
               <span>Transaction signature</span>
               <input
                 required
+                disabled={loading}
                 maxLength={128}
                 autoComplete="off"
                 spellCheck={false}
                 value={request.signature}
                 onChange={(event) =>
-                  setRequest({ ...request, signature: event.target.value })
+                  updateRequest({
+                    ...request,
+                    signature: event.target.value,
+                  })
                 }
                 placeholder="Enter transaction signature"
               />
@@ -122,9 +132,10 @@ export function VerifyWorkspace() {
             <label>
               <span>Cluster</span>
               <select
+                disabled={loading}
                 value={request.cluster}
                 onChange={(event) =>
-                  setRequest({
+                  updateRequest({
                     ...request,
                     cluster: event.target
                       .value as BrowserVerifyEventInput["cluster"],
@@ -142,12 +153,13 @@ export function VerifyWorkspace() {
               <span>Expected program ID</span>
               <input
                 required
+                disabled={loading}
                 maxLength={64}
                 autoComplete="off"
                 spellCheck={false}
                 value={request.expectedProgramId}
                 onChange={(event) =>
-                  setRequest({
+                  updateRequest({
                     ...request,
                     expectedProgramId: event.target.value,
                   })
@@ -161,6 +173,7 @@ export function VerifyWorkspace() {
               <span>Event discriminator</span>
               <input
                 required
+                disabled={loading}
                 minLength={16}
                 maxLength={16}
                 pattern="[0-9a-f]{16}"
@@ -168,7 +181,7 @@ export function VerifyWorkspace() {
                 spellCheck={false}
                 value={request.event.discriminator}
                 onChange={(event) =>
-                  setRequest({
+                  updateRequest({
                     ...request,
                     event: {
                       ...request.event,
