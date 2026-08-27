@@ -162,13 +162,27 @@ Prerequisites:
 ```bash
 git clone https://github.com/abhigyan1102/event-seal.git
 cd event-seal
-cp .env.example .env
+cp .env.example apps/web/.env.local
 npm install
 npm run check
 npm run dev
 ```
 
-Vite prints the local web URL. The interface loads without backend credentials, but hosted verification requires valid `VITE_INSFORGE_URL` and `VITE_INSFORGE_ANON_KEY` values.
+Next.js serves the verifier at `http://localhost:3000/verify`. In the local, uncommitted `apps/web/.env.local`, set `INSFORGE_BASE_URL` and `INSFORGE_ANON_KEY` to the same InsForge environment. Set `EVENTSEAL_APP_URL=http://localhost:3000` for local OAuth callbacks. Restart the dev server after changing these values. The interface loads without backend credentials, but verification and sign-in require valid configuration. Keep administrative keys and RPC credentials in the backend function environment; the web app only needs the URL, anon key, and app origin.
+
+### GitHub sign-in and saved receipts
+
+Enable GitHub in the selected InsForge environment and allow `http://localhost:3000/api/auth/callback` as an application redirect. When using your own GitHub OAuth app, register the backend callback shown by that environment's InsForge dashboard. Shared OAuth uses InsForge's own GitHub app instead. Preview and Production have separate configuration and user data; check the dashboard for the environment the web app actually uses.
+
+When preparing a backend branch, also check the function secrets: `INSFORGE_BASE_URL` must target that branch and `INSFORGE_API_KEY` must be its administrative key. A copied key from another environment can allow verification to reach the persistence step but fail to store any receipt. Check function logs for the underlying error; keep the browser error sanitized and never put the administrative key in web configuration or Git.
+
+Anyone can verify an event. GitHub sign-in is optional and creates an account on the first successful sign-in. Once signed in, click **Save receipt** on an issued receipt, then open **History** (`/history`).
+
+Saved references are stored in Postgres, not browser storage. Refreshing the page or signing out does not delete them; sign back into the same account and backend environment to view them. The current history screen shows the latest 25 references, without pagination. The verifier's current form/result is temporary and resets on refresh. Saving the same receipt again does not create a duplicate.
+
+Only the owning account can read its saved list. Receipt evidence remains publicly readable by receipt ID; saving it does not make the underlying evidence private. The full account dashboard and shareable receipt pages are separate upcoming features.
+
+Before release, verify a real issued receipt can be saved, remains in History after a hard refresh and sign-out/sign-in, and is absent from another account's History. Confirm the same behavior against Production before directing customers there; preview data is not transferred by changing the web app's backend URL.
 
 ### Useful commands
 
