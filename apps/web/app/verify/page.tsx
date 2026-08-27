@@ -13,7 +13,10 @@ export default async function VerifyPage({
   searchParams: Promise<{ auth?: string }>;
 }) {
   const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
-  const authMessage = params.auth ? AUTH_MESSAGES[params.auth] : undefined;
+  const authMessage =
+    params.auth && Object.hasOwn(AUTH_MESSAGES, params.auth)
+      ? AUTH_MESSAGES[params.auth]
+      : undefined;
 
   return (
     <>
