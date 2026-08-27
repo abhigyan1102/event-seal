@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { AuthControls } from "../components/auth-controls";
+import { getCurrentUser } from "../lib/auth-server";
+
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "EventSeal — Verify Solana events",
@@ -11,7 +16,13 @@ export const metadata: Metadata = {
     "Inspect finalized transaction evidence before your backend acts on a Solana event.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en">
       <body>
@@ -36,6 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               GitHub
               <span aria-hidden="true">↗</span>
             </a>
+            <AuthControls user={user} />
           </nav>
         </header>
         <div className="app-shell">{children}</div>

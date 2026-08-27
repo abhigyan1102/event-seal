@@ -111,6 +111,38 @@ select:focus-visible {
   margin-left: auto;
 }
 
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: 24px;
+}
+
+.nav-auth form {
+  display: block;
+}
+
+.nav-auth__button {
+  min-height: 32px;
+  border: 1px solid #48484a;
+  border-radius: 9999px;
+  color: #f5f5f7;
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nav-auth__button:hover {
+  border-color: #86868b;
+  background: #1d1d1f;
+}
+
+.nav-link--history {
+  margin-left: 0;
+}
+
 .app-shell {
   width: 100%;
   max-width: 100%;
@@ -121,6 +153,17 @@ select:focus-visible {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+}
+
+.auth-notice {
+  margin: 0;
+  border-bottom: 1px solid #b8d8f5;
+  color: #004b91;
+  background: #eef7ff;
+  padding: 12px 24px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .verify-grid {
@@ -272,6 +315,27 @@ select:hover {
   opacity: 0.62;
 }
 
+.secondary-button {
+  min-height: 40px;
+  border: 1px solid var(--color-primary);
+  border-radius: 9999px;
+  color: var(--color-primary);
+  background: var(--color-canvas);
+  padding: 9px 18px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.secondary-button:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
 .feedback-region {
   min-height: 480px;
 }
@@ -406,6 +470,31 @@ select:hover {
   line-height: 1.4;
 }
 
+.save-receipt {
+  gap: 8px;
+  margin: -8px 0 28px;
+}
+
+.save-receipt__message,
+.save-receipt__hint {
+  margin: 0 0 28px;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.save-receipt__message {
+  margin: 0;
+}
+
+.save-receipt__message--saved {
+  color: var(--color-success);
+}
+
+.save-receipt__message--error {
+  color: var(--color-danger);
+}
+
 .evidence-list {
   display: grid;
   gap: 18px;
@@ -477,6 +566,95 @@ select:hover {
   align-items: center;
   gap: 6px;
   color: var(--color-primary);
+}
+
+.history-page {
+  width: min(100%, 960px);
+  min-height: calc(100svh - 44px - 72px);
+  margin: 0 auto;
+  padding: clamp(56px, 8vw, 96px) 24px;
+}
+
+.history-page__header {
+  max-width: 680px;
+  margin-bottom: 48px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.history-page h1 {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.history-page__header > p:not(.eyebrow) {
+  max-width: 38rem;
+  margin: 0 0 28px;
+  color: var(--color-muted);
+  font-size: 17px;
+  line-height: 1.47;
+}
+
+.history-page__header form {
+  display: block;
+}
+
+.history-empty {
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 28px;
+}
+
+.history-empty h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.history-empty p {
+  margin: 0 0 18px;
+  color: var(--color-muted);
+}
+
+.text-link {
+  color: var(--color-primary);
+}
+
+.history-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-hairline);
+  list-style: none;
+}
+
+.history-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.history-list code {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.history-list time {
+  color: var(--color-muted);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .boundary-page {
@@ -556,6 +734,14 @@ select:hover {
     margin-left: 24px;
   }
 
+  .nav-link--external {
+    display: none;
+  }
+
+  .nav-auth {
+    margin-left: auto;
+  }
+
   .verify-grid {
     border-inline: 0;
   }
@@ -590,11 +776,20 @@ select:hover {
   .empty-state {
     min-height: 320px;
   }
+
+  .history-list li {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 419px) {
   .nav-link--active {
     display: none;
+  }
+
+  .nav-auth__button {
+    padding-inline: 10px;
   }
 
   .verify-intro,

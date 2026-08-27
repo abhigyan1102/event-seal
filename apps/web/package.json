@@ -14,7 +14,7 @@
     "@eventseal/sdk": "*",
     "@fontsource-variable/outfit": "5.3.0",
     "@gsap/react": "2.1.2",
-    "@insforge/sdk": "^1.1.11",
+    "@insforge/sdk": "^1.5.0",
     "gsap": "3.15.0",
     "next": "16.3.3",
     "react": "19.2.8",

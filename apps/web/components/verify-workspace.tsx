@@ -7,6 +7,7 @@ import { type FormEvent, useRef, useState } from "react";
 
 import { requestVerification } from "../lib/verification-api";
 import type { BrowserVerifyEventInput } from "../lib/verification-request";
+import { SaveReceiptButton } from "./save-receipt-button";
 
 gsap.registerPlugin(useGSAP);
 
@@ -18,7 +19,7 @@ const emptyRequest: BrowserVerifyEventInput = {
   commitment: "finalized",
 };
 
-export function VerifyWorkspace() {
+export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
   const root = useRef<HTMLElement>(null);
   const feedback = useRef<HTMLDivElement>(null);
   const [request, setRequest] = useState(emptyRequest);
@@ -226,7 +227,9 @@ export function VerifyWorkspace() {
               </div>
             )}
 
-            {result && <VerificationReceipt result={result} />}
+            {result && (
+              <VerificationReceipt result={result} signedIn={signedIn} />
+            )}
           </div>
         </section>
       </section>
@@ -234,7 +237,13 @@ export function VerifyWorkspace() {
   );
 }
 
-function VerificationReceipt({ result }: { result: VerificationResult }) {
+function VerificationReceipt({
+  result,
+  signedIn,
+}: {
+  result: VerificationResult;
+  signedIn: boolean;
+}) {
   return (
     <article className={`receipt receipt--${result.verdict}`}>
       <p className="verdict">{result.verdict}</p>
@@ -251,6 +260,15 @@ function VerificationReceipt({ result }: { result: VerificationResult }) {
           <dd>{result.receiptId ?? "Not issued"}</dd>
         </div>
       </dl>
+
+      {result.receiptId &&
+        (signedIn ? (
+          <SaveReceiptButton receiptId={result.receiptId} />
+        ) : (
+          <p className="save-receipt__hint">
+            Sign in with GitHub to save this receipt privately.
+          </p>
+        ))}
 
       <ul className="evidence-list" aria-label="Verification evidence">
         {result.evidence.map((item, index) => (
