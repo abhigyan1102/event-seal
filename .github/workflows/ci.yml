@@ -17,6 +17,25 @@ jobs:
       - run: npm ci
       - run: npm run check
 
+  database:
+    runs-on: ubuntu-latest
+    container: postgres:17
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: eventseal_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd "pg_isready -U postgres -d eventseal_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check saved receipt database permissions
+        run: psql -X --host postgres --username postgres --dbname eventseal_test --file tests/database/user-receipt-grants.sql
+
   rust:
     runs-on: ubuntu-latest
     steps:
