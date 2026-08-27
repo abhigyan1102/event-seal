@@ -16,8 +16,8 @@ export async function createAuthenticatedClient() {
 }
 
 export async function getCurrentUser() {
-  const client = await createAuthenticatedClient();
   try {
+    const client = await createAuthenticatedClient();
     const { data, error } = await client.auth.getCurrentUser();
     return error ? null : data.user;
   } catch {
