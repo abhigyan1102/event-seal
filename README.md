@@ -170,6 +170,14 @@ npm run dev
 
 Next.js serves the verifier at `http://localhost:3000/verify`. In the local, uncommitted `apps/web/.env.local`, set `INSFORGE_BASE_URL` and `INSFORGE_ANON_KEY` to the same InsForge environment. Set `EVENTSEAL_APP_URL=http://localhost:3000` for local OAuth callbacks. Restart the dev server after changing these values. The interface loads without backend credentials, but verification and sign-in require valid configuration. Keep administrative keys and RPC credentials in the backend function environment; the web app only needs the URL, anon key, and app origin.
 
+### Verification workspace
+
+On `/verify`, load **Successful event** or **Failed transaction** to populate a real devnet example, then click **Verify event**. Examples only fill inputs: every submission fetches live evidence. The successful example should return `verified / VERIFIED`; the failed transaction should return `rejected / TX_FAILED` without a receipt. RPC availability and retained transaction history can affect either example.
+
+For your own transaction, choose its cluster and supply the expected emitting program's trusted deployment address and eight-byte Anchor event discriminator (16 hexadecimal characters). Expand **Where do I find these values?** for guidance. A transaction can invoke several programs, and not every transaction contains a supported Anchor log event.
+
+The workspace displays the returned checks, an explicit verdict, and reason-specific next steps. Expand **Transaction and receipt details** for the exact evidence identity, open the transaction in Solana Explorer, or copy the result JSON. Only issued receipts have a receipt-ID copy action or can be saved. Editing a request clears the previous result; incomplete evidence is never presented as a pass.
+
 ### GitHub sign-in and saved receipts
 
 Enable GitHub in the selected InsForge environment and allow `http://localhost:3000/api/auth/callback` as an application redirect. When using your own GitHub OAuth app, register the backend callback shown by that environment's InsForge dashboard. Shared OAuth uses InsForge's own GitHub app instead. Preview and Production have separate configuration and user data; check the dashboard for the environment the web app actually uses.
