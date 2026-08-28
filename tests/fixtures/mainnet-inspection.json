@@ -1,0 +1,21 @@
+{
+  "cluster": "mainnet-beta",
+  "noEvent": {
+    "signature": "54USpCLH2SnWSwFejdemh2ZfoySs6nN8bJr8bFhn7t7dd5h7poQhdRAJ535oDT8FSpxBRhxX7RpUbEps9oojjMDE",
+    "slot": 442143319,
+    "programId": "61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH"
+  },
+  "supportedEvent": {
+    "signature": "5gaeFrtNaK29tMVHhNuzFmsPF6CHg1KKeojQFgkMPJyzxFpD4T7ZDr7jDDW1gedRyWq2FDrXNwUyAWkBLGJqwyuN",
+    "slot": 442360234,
+    "programId": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+    "eventName": "SwapEvent",
+    "discriminator": "40c6cde8260871e2",
+    "eventSource": "https://github.com/raydium-io/raydium-clmm/blob/ed7c84a54ced59c55981780546adb0b4583dcf85/programs/amm/src/states/pool.rs",
+    "programSource": "https://github.com/raydium-io/raydium-clmm/blob/ed7c84a54ced59c55981780546adb0b4583dcf85/programs/amm/src/lib.rs"
+  },
+  "failed": {
+    "signature": "4ZsXYCr6sYoN6L49F61vaUxXrnsX39c4gWimWkTbjqEa74MxFwfqoKCZM65TGYPac8bGGBK5dwbaoR2mTgPLpWXg",
+    "slot": 442360234
+  }
+}

@@ -9,8 +9,8 @@ import {
 export async function verifyAndPersist(
   input: VerifyEventInput,
 ): Promise<VerificationResult> {
-  const rpcUrl = input.rpcUrl ?? Deno.env.get("SOLANA_RPC_URL");
-  const result = await verifyEvent({ ...input, rpcUrl });
+  // Hosted handlers resolve cluster-specific configuration before reaching here.
+  const result = await verifyEvent(input);
 
   if (!result.receiptId) return result;
 

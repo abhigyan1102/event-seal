@@ -1,5 +1,42 @@
 export type SolanaCluster = "mainnet-beta" | "devnet" | "testnet";
 
+export interface InspectTransactionInput {
+  signature: string;
+  cluster: SolanaCluster;
+  /** Trusted RPC endpoint for this cluster. Its genesis hash must match. */
+  rpcUrl?: string;
+}
+
+/** Untrusted log bytes, not a decoded event or an event-verification receipt. */
+export interface LogEventCandidate extends EventEvidence {
+  discriminator: string;
+  dataBase64: string;
+}
+
+export interface TransactionInspection {
+  kind: "transaction-inspection";
+  signature: string;
+  cluster: SolanaCluster;
+  finality: "processed" | "confirmed" | "finalized" | "unknown";
+  execution: "succeeded" | "failed" | "unknown";
+  slot?: number;
+  reasonCode:
+    | "CANDIDATES_FOUND"
+    | "NO_SUPPORTED_LOG_EVENT"
+    | "LOGS_INCOMPLETE"
+    | "LOGS_UNAVAILABLE"
+    | "METADATA_MISSING"
+    | "TX_FAILED"
+    | "TX_NOT_FOUND"
+    | "TX_NOT_FINALIZED"
+    | "RPC_UNAVAILABLE"
+    | "INVALID_REQUEST";
+  /** Programs observed in logs only; not an exhaustive list when logs are missing. */
+  invokedPrograms: string[];
+  logsStatus: "available" | "unavailable" | "incomplete";
+  candidates: LogEventCandidate[];
+}
+
 export type EventFormat = "anchor-log" | "anchor-cpi";
 
 export type VerificationVerdict = "verified" | "rejected" | "indeterminate";

@@ -14,6 +14,7 @@ When deploying, operate on these public backend artifacts:
 - Function: `verify-event`
 - Function: `get-receipt`
 - Function: `helius-webhook`
+- Function: `inspect-transaction` (read-only, no database credentials)
 
 The deployment operator owns interactive CLI login, project linking, secret
 configuration, migration apply, function deploy, and any Helius dashboard
@@ -25,8 +26,8 @@ changes from their local terminal.
 - `npm install` has completed.
 - `npm run check` passes locally before deployment.
 - Access to the intended InsForge project.
-- Optional private Solana RPC endpoint. If `SOLANA_RPC_URL` is not configured,
-  verification uses the SDK cluster default endpoint.
+- Optional per-network Solana RPC endpoints. Otherwise the SDK uses the selected
+  cluster's public endpoint.
 - A generated webhook secret for Helius. Use a random secret; do not reuse an
   API key.
 
@@ -48,19 +49,24 @@ npx @insforge/cli link
 ## Server environment
 
 Configure these server-only values in the InsForge project before invoking the
-functions. `SOLANA_RPC_URL` is optional but recommended for deployments that
-should avoid public cluster RPC defaults.
+functions. Per-network RPC settings are optional but recommended for deployments
+that should avoid public cluster RPC defaults. Migrate an existing `SOLANA_RPC_URL`
+to the appropriate network-specific key before deploying, or add the explicit
+`SOLANA_RPC_CLUSTER` binding. An unbound legacy URL fails closed.
 
-| Name                            | Used by                                         | Notes                                                                          |
-| ------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| `INSFORGE_BASE_URL`             | `verify-event`, `get-receipt`, `helius-webhook` | Required server-side project URL.                                              |
-| `INSFORGE_API_KEY`              | `verify-event`, `get-receipt`, `helius-webhook` | Required server-only administrative key for receipt persistence.               |
-| `SOLANA_RPC_URL`                | `verify-event`, `helius-webhook`                | Optional server-owned Solana JSON-RPC endpoint; defaults to SDK cluster RPC.   |
-| `EVENTSEAL_CLUSTER`             | `helius-webhook`                                | Required `mainnet-beta`, `devnet`, or `testnet`; devnet is the current target. |
-| `EVENTSEAL_EXPECTED_PROGRAM_ID` | `helius-webhook`                                | Required program expected to emit the verified event.                          |
-| `EVENTSEAL_EVENT_FORMAT`        | `helius-webhook`                                | Required `anchor-log` for hosted webhook receipt deployment.                   |
-| `EVENTSEAL_EVENT_DISCRIMINATOR` | `helius-webhook`                                | Required sixteen lowercase hex characters.                                     |
-| `EVENTSEAL_WEBHOOK_SECRET`      | `helius-webhook`                                | Required shared secret in `X-EventSeal-Webhook-Secret`.                        |
+| Name                                    | Used by                                                 | Notes                                                                          |
+| --------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `INSFORGE_BASE_URL`                     | `verify-event`, `get-receipt`, `helius-webhook`         | Required server-side project URL.                                              |
+| `INSFORGE_API_KEY`                      | `verify-event`, `get-receipt`, `helius-webhook`         | Required server-only administrative key for receipt persistence.               |
+| `SOLANA_RPC_MAINNET_URL`                | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional mainnet-beta RPC only.                                                |
+| `SOLANA_RPC_DEVNET_URL`                 | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional devnet RPC only.                                                      |
+| `SOLANA_RPC_TESTNET_URL`                | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional testnet RPC only.                                                     |
+| `SOLANA_RPC_URL` + `SOLANA_RPC_CLUSTER` | Same three functions                                    | Legacy pair: used only for the named cluster if no specific URL is configured. |
+| `EVENTSEAL_CLUSTER`                     | `helius-webhook`                                        | Required `mainnet-beta`, `devnet`, or `testnet`; devnet is the current target. |
+| `EVENTSEAL_EXPECTED_PROGRAM_ID`         | `helius-webhook`                                        | Required program expected to emit the verified event.                          |
+| `EVENTSEAL_EVENT_FORMAT`                | `helius-webhook`                                        | Required `anchor-log` for hosted webhook receipt deployment.                   |
+| `EVENTSEAL_EVENT_DISCRIMINATOR`         | `helius-webhook`                                        | Required sixteen lowercase hex characters.                                     |
+| `EVENTSEAL_WEBHOOK_SECRET`              | `helius-webhook`                                        | Required shared secret in `X-EventSeal-Webhook-Secret`.                        |
 
 Anchor CPI events are intentionally not listed as a deployable webhook receipt
 format yet. The current verifier fails closed for `anchor-cpi` with
@@ -90,7 +96,8 @@ Add the optional deployment-owned RPC endpoint when the deployment should avoid
 public cluster RPC defaults:
 
 ```bash
-npx @insforge/cli secrets add SOLANA_RPC_URL <solana-rpc-url>
+npx @insforge/cli secrets add SOLANA_RPC_DEVNET_URL <devnet-rpc-url>
+npx @insforge/cli secrets add SOLANA_RPC_MAINNET_URL <mainnet-rpc-url>
 ```
 
 For secret rotation or existing keys, update values explicitly:
@@ -98,7 +105,7 @@ For secret rotation or existing keys, update values explicitly:
 ```bash
 npx @insforge/cli secrets update INSFORGE_BASE_URL --value <project-url>
 npx @insforge/cli secrets update INSFORGE_API_KEY --value <server-api-key>
-npx @insforge/cli secrets update SOLANA_RPC_URL --value <solana-rpc-url>
+npx @insforge/cli secrets update SOLANA_RPC_DEVNET_URL --value <devnet-rpc-url>
 npx @insforge/cli secrets update EVENTSEAL_CLUSTER --value devnet
 npx @insforge/cli secrets update EVENTSEAL_EXPECTED_PROGRAM_ID --value <program-id>
 npx @insforge/cli secrets update EVENTSEAL_EVENT_FORMAT --value anchor-log
@@ -142,6 +149,7 @@ Confirm these generated files exist:
 functions/dist/verify-event.js
 functions/dist/get-receipt.js
 functions/dist/helius-webhook.js
+functions/dist/inspect-transaction.js
 ```
 
 Record the source revision and bundle checksums before deployment:
@@ -189,9 +197,10 @@ Deploy the bundled handlers:
 npx @insforge/cli functions deploy verify-event --file functions/dist/verify-event.js
 npx @insforge/cli functions deploy get-receipt --file functions/dist/get-receipt.js
 npx @insforge/cli functions deploy helius-webhook --file functions/dist/helius-webhook.js
+npx @insforge/cli functions deploy inspect-transaction --file functions/dist/inspect-transaction.js
 ```
 
-Check that all three functions are active:
+Check that all four functions are active:
 
 ```bash
 npx @insforge/cli functions list

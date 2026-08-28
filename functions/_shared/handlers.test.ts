@@ -68,7 +68,7 @@ describe("createVerifyEventHandler", () => {
   it("verifies valid requests with the server-owned RPC URL", async () => {
     const verifyAndPersist = vi.fn().mockResolvedValue(verificationResult);
     const handler = createVerifyEventHandler({
-      getEnv: getEnv({ SOLANA_RPC_URL: "https://private-rpc.example" }),
+      getEnv: getEnv({ SOLANA_RPC_DEVNET_URL: "https://private-rpc.example" }),
       logger: logger(),
       verifyAndPersist,
     });
@@ -245,7 +245,7 @@ describe("createHeliusWebhookHandler", () => {
     EVENTSEAL_EVENT_FORMAT: "anchor-log",
     EVENTSEAL_EXPECTED_PROGRAM_ID: validVerifyInput.expectedProgramId,
     EVENTSEAL_WEBHOOK_SECRET: "webhook-secret",
-    SOLANA_RPC_URL: "https://private-rpc.example",
+    SOLANA_RPC_DEVNET_URL: "https://private-rpc.example",
   };
 
   it("rejects unauthorized requests before processing the payload", async () => {
