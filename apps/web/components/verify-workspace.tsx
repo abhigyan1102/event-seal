@@ -94,16 +94,6 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
   function chooseCandidate(candidate: LogEventCandidate) {
     if (submitting.current) return;
     setSelectedCandidate(candidate.eventPosition);
-    setRequest((current) => ({
-      ...current,
-      expectedProgramId: candidate.emitterProgramId,
-      event: { ...current.event, discriminator: candidate.discriminator },
-    }));
-    setTouched((current) => ({
-      ...current,
-      expectedProgramId: false,
-      discriminator: false,
-    }));
     setVerification(undefined);
     setError(undefined);
   }
@@ -179,14 +169,6 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
       const firstCandidate = result.candidates[0];
       if (firstCandidate) {
         setSelectedCandidate(firstCandidate.eventPosition);
-        setRequest((current) => ({
-          ...current,
-          expectedProgramId: firstCandidate.emitterProgramId,
-          event: {
-            ...current.event,
-            discriminator: firstCandidate.discriminator,
-          },
-        }));
       }
     } catch (caught) {
       setError({
@@ -521,9 +503,7 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
                 >
                   {loading === "verification"
                     ? "Verifying event…"
-                    : selectedCandidate !== undefined
-                      ? "Verify selected candidate"
-                      : "Verify event identity"}
+                    : "Verify trusted event identity"}
                 </button>
                 <p className="verification-boundary">
                   Only this step can produce a verdict and receipt.

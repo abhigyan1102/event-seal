@@ -121,5 +121,30 @@ describe("createInspectionRoute", () => {
       Promise.resolve({ ...result, candidates: [{}] } as TransactionInspection),
     )(request(input));
     expect(malformed.status).toBe(502);
+
+    const expandedTopLevel = await createInspectionRoute(() =>
+      Promise.resolve({
+        ...result,
+        privateProviderDetail: "must not reach the browser",
+      } as unknown as TransactionInspection),
+    )(request(input));
+    expect(expandedTopLevel.status).toBe(502);
+
+    const expandedCandidate = await createInspectionRoute(() =>
+      Promise.resolve({
+        ...result,
+        candidates: [
+          {
+            eventPosition: 0,
+            emitterProgramId: "1".repeat(32),
+            eventDataHash: "a".repeat(64),
+            discriminator: "0102030405060708",
+            dataBase64: "AQIDBAUGBwg=",
+            privateProviderDetail: "must not reach the browser",
+          },
+        ],
+      } as unknown as TransactionInspection),
+    )(request(input));
+    expect(expandedCandidate.status).toBe(502);
   });
 });

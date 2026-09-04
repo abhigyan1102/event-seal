@@ -21,12 +21,32 @@ const HEX_16 = /^[0-9a-f]{16}$/;
 const HEX_64 = /^[0-9a-f]{64}$/;
 const BASE64 =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const INSPECTION_KEYS = new Set([
+  "kind",
+  "signature",
+  "cluster",
+  "finality",
+  "execution",
+  "slot",
+  "reasonCode",
+  "invokedPrograms",
+  "logsStatus",
+  "candidates",
+]);
+const CANDIDATE_KEYS = new Set([
+  "eventPosition",
+  "emitterProgramId",
+  "eventDataHash",
+  "discriminator",
+  "dataBase64",
+]);
 
 export function isTransactionInspection(
   value: unknown,
 ): value is TransactionInspection {
   if (!isRecord(value)) return false;
   return (
+    hasOnlyKeys(value, INSPECTION_KEYS) &&
     value.kind === "transaction-inspection" &&
     typeof value.signature === "string" &&
     typeof value.cluster === "string" &&
@@ -54,6 +74,7 @@ export function isTransactionInspection(
 function isLogEventCandidate(value: unknown): boolean {
   return (
     isRecord(value) &&
+    hasOnlyKeys(value, CANDIDATE_KEYS) &&
     isNonNegativeInteger(value.eventPosition) &&
     typeof value.emitterProgramId === "string" &&
     BASE58_ADDRESS.test(value.emitterProgramId) &&
@@ -77,4 +98,11 @@ function isNonNegativeInteger(value: unknown): value is number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOnlyKeys(
+  value: Record<string, unknown>,
+  allowed: ReadonlySet<string>,
+): boolean {
+  return Object.keys(value).every((key) => allowed.has(key));
 }

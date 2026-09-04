@@ -38,6 +38,16 @@ describe("transaction inspection result validation", () => {
       ...valid,
       candidates: [{ ...valid.candidates[0], discriminator: "ABCDEF" }],
     },
+    { ...valid, privateProviderDetail: "must not reach the browser" },
+    {
+      ...valid,
+      candidates: [
+        {
+          ...valid.candidates[0],
+          privateProviderDetail: "must not reach the browser",
+        },
+      ],
+    },
   ])("rejects malformed upstream result %j", (result) => {
     expect(isTransactionInspection(result)).toBe(false);
   });
