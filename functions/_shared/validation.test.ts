@@ -77,6 +77,14 @@ describe("applyServerRpcUrl", () => {
         SOLANA_RPC_DEVNET_URL: "file:///tmp/test",
       }).ok,
     ).toBe(false);
+    expect(
+      applyServerRpcUrl(validInput, {
+        SOLANA_RPC_DEVNET_URL: "http://devnet.example",
+      }),
+    ).toEqual({
+      ok: false,
+      error: "The configured cluster RPC URL must use HTTPS",
+    });
   });
 });
 

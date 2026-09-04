@@ -106,6 +106,7 @@ For secret rotation or existing keys, update values explicitly:
 npx @insforge/cli secrets update INSFORGE_BASE_URL --value <project-url>
 npx @insforge/cli secrets update INSFORGE_API_KEY --value <server-api-key>
 npx @insforge/cli secrets update SOLANA_RPC_DEVNET_URL --value <devnet-rpc-url>
+npx @insforge/cli secrets update SOLANA_RPC_MAINNET_URL --value <mainnet-rpc-url>
 npx @insforge/cli secrets update EVENTSEAL_CLUSTER --value devnet
 npx @insforge/cli secrets update EVENTSEAL_EXPECTED_PROGRAM_ID --value <program-id>
 npx @insforge/cli secrets update EVENTSEAL_EVENT_FORMAT --value anchor-log
@@ -366,18 +367,18 @@ header key is configured and whether a delivery returned `200`.
 
 For each deployment, record non-secret outputs in the PR or release notes:
 
-| Field                     | Value                                            |
-| ------------------------- | ------------------------------------------------ |
-| InsForge project          | `<project name or public slug only>`             |
-| Source commit SHA         | `<40-character git commit SHA>`                  |
-| Function bundle checksums | `<sha256 for each functions/dist/*.js bundle>`   |
-| Migration command         | `npx @insforge/cli db migrations up --all`       |
-| Applied migration version | `20260721000000`                                 |
-| Function slugs            | `verify-event`, `get-receipt`, `helius-webhook`  |
-| Function status           | `<active/error>`                                 |
-| Validation smoke          | `<passed/failed>`                                |
-| Positive devnet smoke     | `<receiptId and get-receipt status, or not run>` |
-| Helius delivery smoke     | `<passed/failed/not run>`                        |
+| Field                     | Value                                                                  |
+| ------------------------- | ---------------------------------------------------------------------- |
+| InsForge project          | `<project name or public slug only>`                                   |
+| Source commit SHA         | `<40-character git commit SHA>`                                        |
+| Function bundle checksums | `<sha256 for each functions/dist/*.js bundle>`                         |
+| Migration command         | `npx @insforge/cli db migrations up --all`                             |
+| Applied migration version | `20260721000000`                                                       |
+| Function slugs            | `verify-event`, `get-receipt`, `helius-webhook`, `inspect-transaction` |
+| Function status           | `<active/error>`                                                       |
+| Validation smoke          | `<passed/failed>`                                                      |
+| Positive devnet smoke     | `<receiptId and get-receipt status, or not run>`                       |
+| Helius delivery smoke     | `<passed/failed/not run>`                                              |
 
 Never record:
 
@@ -434,6 +435,7 @@ diff -u "$RECORDED_CHECKSUMS" "$ROLLBACK_CHECKSUMS" || exit 1
 npx @insforge/cli functions deploy verify-event --file functions/dist/verify-event.js
 npx @insforge/cli functions deploy get-receipt --file functions/dist/get-receipt.js
 npx @insforge/cli functions deploy helius-webhook --file functions/dist/helius-webhook.js
+npx @insforge/cli functions deploy inspect-transaction --file functions/dist/inspect-transaction.js
 ```
 
 If the checksum diff fails, stop the rollback. The rebuilt bundles do not match

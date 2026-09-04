@@ -50,8 +50,8 @@ export function applyServerRpcUrl<
   }
   try {
     const url = new URL(rpcUrl);
-    if (!["http:", "https:"].includes(url.protocol))
-      return invalid("The configured cluster RPC URL must use HTTP or HTTPS");
+    if (url.protocol !== "https:")
+      return invalid("The configured cluster RPC URL must use HTTPS");
   } catch {
     return invalid("The configured cluster RPC URL must be an absolute URL");
   }
