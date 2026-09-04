@@ -22,9 +22,13 @@ describe("parseAuthConfig", () => {
     expect(
       parseAuthConfig({
         ...configuredEnv,
+        INSFORGE_BASE_URL: "http://127.0.0.1:7130",
         EVENTSEAL_APP_URL: "http://localhost:3000",
-      }).secureCookies,
-    ).toBe(false);
+      }),
+    ).toMatchObject({
+      baseUrl: "http://127.0.0.1:7130",
+      secureCookies: false,
+    });
   });
 
   it("rejects non-local HTTP and credential-bearing URLs", () => {
@@ -32,6 +36,12 @@ describe("parseAuthConfig", () => {
       parseAuthConfig({
         ...configuredEnv,
         EVENTSEAL_APP_URL: "http://eventseal.example",
+      }),
+    ).toThrow("must use HTTPS");
+    expect(() =>
+      parseAuthConfig({
+        ...configuredEnv,
+        INSFORGE_BASE_URL: "http://example.insforge.app",
       }),
     ).toThrow("must use HTTPS");
     expect(() =>

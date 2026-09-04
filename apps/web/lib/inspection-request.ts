@@ -27,9 +27,9 @@ export function validateBrowserInspectTransactionInput(
   }
 
   const signature = boundedString(value.signature, 128);
-  if (!signature) {
+  if (!signature || !isBase58Bytes(signature, 64)) {
     return invalid(
-      "signature must be a non-empty string of at most 128 characters",
+      "signature must be a base58 transaction signature that decodes to 64 bytes",
     );
   }
 
@@ -45,6 +45,20 @@ export function validateBrowserInspectTransactionInput(
       cluster: cluster as BrowserInspectTransactionInput["cluster"],
     },
   };
+}
+
+export function isBase58Bytes(value: string, bytes: number): boolean {
+  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  if (!value || value.length > 128) return false;
+  let number = 0n;
+  for (const character of value) {
+    const digit = alphabet.indexOf(character);
+    if (digit < 0) return false;
+    number = number * 58n + BigInt(digit);
+  }
+  const leadingZeros = value.match(/^1*/)?.[0].length ?? 0;
+  const width = number === 0n ? 0 : Math.ceil(number.toString(16).length / 2);
+  return leadingZeros + width === bytes;
 }
 
 function boundedString(value: unknown, maxLength: number): string | undefined {

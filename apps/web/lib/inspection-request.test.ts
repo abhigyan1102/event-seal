@@ -22,6 +22,8 @@ describe("browser inspection request validation", () => {
     { ...validInput, expectedProgramId: "program" },
     { ...validInput, cluster: "localnet" },
     { ...validInput, signature: "" },
+    { ...validInput, signature: "1".repeat(32) },
+    { ...validInput, signature: "not-a-base58-signature!" },
   ])("rejects invalid or expanded browser input %j", (input) => {
     expect(validateBrowserInspectTransactionInput(input).ok).toBe(false);
   });

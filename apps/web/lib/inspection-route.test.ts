@@ -69,6 +69,18 @@ describe("createInspectionRoute", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  it.each(["1".repeat(32), "not-a-base58-signature!"])(
+    "rejects non-signature input before invoking upstream",
+    async (signature) => {
+      const invoke = vi.fn();
+      const response = await createInspectionRoute(invoke)(
+        request({ ...input, signature }),
+      );
+      expect(response.status).toBe(400);
+      expect(invoke).not.toHaveBeenCalled();
+    },
+  );
+
   it("stops reading an undeclared oversized request body", async () => {
     const invoke = vi.fn();
     const cancel = vi.fn();

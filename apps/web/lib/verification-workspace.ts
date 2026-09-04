@@ -7,7 +7,10 @@ import type {
 } from "@eventseal/sdk";
 
 import demo from "../../../tests/fixtures/devnet-demo.json";
-import type { BrowserInspectTransactionInput } from "./inspection-request";
+import {
+  isBase58Bytes,
+  type BrowserInspectTransactionInput,
+} from "./inspection-request";
 import type { BrowserVerifyEventInput } from "./verification-request";
 
 export type RequestField = "signature" | "expectedProgramId" | "discriminator";
@@ -56,21 +59,6 @@ export function normalizeInspectionRequest(
     signature: request.signature.trim(),
     cluster: request.cluster,
   };
-}
-
-// Check both the alphabet and decoded width; character count alone is not enough.
-function isBase58Bytes(value: string, bytes: number): boolean {
-  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  if (!value || value.length > 128) return false;
-  let number = 0n;
-  for (const character of value) {
-    const digit = alphabet.indexOf(character);
-    if (digit < 0) return false;
-    number = number * 58n + BigInt(digit);
-  }
-  const leadingZeros = value.match(/^1*/)?.[0].length ?? 0;
-  const width = number === 0n ? 0 : Math.ceil(number.toString(16).length / 2);
-  return leadingZeros + width === bytes;
 }
 
 export function validateWorkspaceRequest(
