@@ -34,7 +34,10 @@ export function parseAuthConfig(
   };
 }
 
-function parseServiceUrl(value: string | undefined, name: string): string {
+export function parseServiceUrl(
+  value: string | undefined,
+  name: string,
+): string {
   if (!value?.trim()) throw new Error(`${name} is not configured`);
   return parseAppUrl(value, name);
 }

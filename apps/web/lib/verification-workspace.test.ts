@@ -8,9 +8,13 @@ import {
   emptyVerificationRequest,
   evidenceLabel,
   exampleRequest,
+  inspectionMatchesRequest,
+  inspectionReasonCopy,
+  normalizeInspectionRequest,
   normalizeRequest,
   resultMatchesRequest,
   transactionUrl,
+  validateInspectionWorkspaceRequest,
   validateWorkspaceRequest,
 } from "./verification-workspace";
 
@@ -104,6 +108,19 @@ describe("verification workspace requests", () => {
       demo.event.discriminator,
     );
   });
+
+  it("validates signature-only inspection before event identity is known", () => {
+    const input = emptyVerificationRequest();
+    input.signature = "1".repeat(64);
+    expect(validateInspectionWorkspaceRequest(input)).toEqual({});
+    const verificationErrors = validateWorkspaceRequest(input);
+    expect(verificationErrors.expectedProgramId).toBeDefined();
+    expect(verificationErrors.discriminator).toBeDefined();
+    expect(normalizeInspectionRequest(input)).toEqual({
+      signature: input.signature,
+      cluster: input.cluster,
+    });
+  });
 });
 
 describe("result identity and links", () => {
@@ -159,5 +176,30 @@ describe("result identity and links", () => {
     expect(evidenceLabel("__proto__")).toBe("__proto__");
     expect(evidenceLabel("constructor")).toBe("constructor");
     expect(evidenceLabel("attribution")).toBe("Event attribution");
+  });
+
+  it("matches inspection identity without treating it as verification", () => {
+    const inspected = {
+      kind: "transaction-inspection" as const,
+      signature: request.signature,
+      cluster: request.cluster,
+      finality: "finalized" as const,
+      execution: "succeeded" as const,
+      reasonCode: "NO_SUPPORTED_LOG_EVENT" as const,
+      invokedPrograms: [],
+      logsStatus: "available" as const,
+      candidates: [],
+    };
+    const identity = normalizeInspectionRequest(request);
+    expect(inspectionMatchesRequest(inspected, identity)).toBe(true);
+    expect(
+      inspectionMatchesRequest(
+        { ...inspected, signature: exampleRequest("failure").signature },
+        identity,
+      ),
+    ).toBe(false);
+    expect(inspectionReasonCopy.NO_SUPPORTED_LOG_EVENT.guidance).toContain(
+      "not a verification failure",
+    );
   });
 });

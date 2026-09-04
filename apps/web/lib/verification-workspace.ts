@@ -1,10 +1,16 @@
 import type {
+  InspectTransactionInput,
+  TransactionInspection,
   VerificationReasonCode,
   VerificationResult,
   SolanaCluster,
 } from "@eventseal/sdk";
 
 import demo from "../../../tests/fixtures/devnet-demo.json";
+import {
+  isBase58Bytes,
+  type BrowserInspectTransactionInput,
+} from "./inspection-request";
 import type { BrowserVerifyEventInput } from "./verification-request";
 
 export type RequestField = "signature" | "expectedProgramId" | "discriminator";
@@ -46,19 +52,13 @@ export function normalizeRequest(
   };
 }
 
-// Check both the alphabet and decoded width; character count alone is not enough.
-function isBase58Bytes(value: string, bytes: number): boolean {
-  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  if (!value || value.length > 128) return false;
-  let number = 0n;
-  for (const character of value) {
-    const digit = alphabet.indexOf(character);
-    if (digit < 0) return false;
-    number = number * 58n + BigInt(digit);
-  }
-  const leadingZeros = value.match(/^1*/)?.[0].length ?? 0;
-  const width = number === 0n ? 0 : Math.ceil(number.toString(16).length / 2);
-  return leadingZeros + width === bytes;
+export function normalizeInspectionRequest(
+  request: Pick<InspectTransactionInput, "signature" | "cluster">,
+): BrowserInspectTransactionInput {
+  return {
+    signature: request.signature.trim(),
+    cluster: request.cluster,
+  };
 }
 
 export function validateWorkspaceRequest(
@@ -76,6 +76,17 @@ export function validateWorkspaceRequest(
     errors.discriminator =
       "Enter exactly 16 hexadecimal characters for the eight-byte event discriminator.";
   return errors;
+}
+
+export function validateInspectionWorkspaceRequest(
+  request: Pick<InspectTransactionInput, "signature" | "cluster">,
+): Pick<FieldErrors, "signature"> {
+  const value = normalizeInspectionRequest(request);
+  if (isBase58Bytes(value.signature, 64)) return {};
+  return {
+    signature:
+      "Enter a complete Solana transaction signature (64 bytes in base58), not a wallet address or URL.",
+  };
 }
 
 export const clusterLabels: Record<SolanaCluster, string> = {
@@ -106,6 +117,72 @@ export function resultMatchesRequest(
     result.commitment === "finalized"
   );
 }
+
+export function inspectionMatchesRequest(
+  result: TransactionInspection,
+  request: BrowserInspectTransactionInput,
+): boolean {
+  return (
+    result.kind === "transaction-inspection" &&
+    result.signature === request.signature &&
+    result.cluster === request.cluster
+  );
+}
+
+export const inspectionReasonCopy: Record<
+  TransactionInspection["reasonCode"],
+  { title: string; guidance: string }
+> = {
+  CANDIDATES_FOUND: {
+    title: "Candidate event data found",
+    guidance:
+      "These log bytes are unverified. Select a candidate and run event verification before trusting it.",
+  },
+  NO_SUPPORTED_LOG_EVENT: {
+    title: "No supported event data found",
+    guidance:
+      "The transaction was inspected successfully, but its logs contain no supported Anchor log event. This is not a verification failure.",
+  },
+  LOGS_INCOMPLETE: {
+    title: "Transaction logs are incomplete",
+    guidance:
+      "Candidate discovery is unsafe with partial logs. Do not infer that an event was absent.",
+  },
+  LOGS_UNAVAILABLE: {
+    title: "Transaction logs are unavailable",
+    guidance:
+      "The RPC did not return the logs needed for event discovery. Retry later or use an archival provider.",
+  },
+  METADATA_MISSING: {
+    title: "Transaction metadata is missing",
+    guidance:
+      "Execution and event evidence cannot be established from this RPC response.",
+  },
+  TX_FAILED: {
+    title: "Transaction execution failed",
+    guidance:
+      "Logs may exist, but failed transactions must not authorize an application action.",
+  },
+  TX_NOT_FOUND: {
+    title: "Transaction not found",
+    guidance:
+      "Check the signature and network. Recent transactions may need time; older ones may require an archival RPC.",
+  },
+  TX_NOT_FINALIZED: {
+    title: "Transaction is not finalized",
+    guidance:
+      "Wait for finalization before verifying an event or making an application decision.",
+  },
+  RPC_UNAVAILABLE: {
+    title: "RPC evidence is unavailable",
+    guidance:
+      "No reliable inspection result could be established. Retry later; do not treat this as success.",
+  },
+  INVALID_REQUEST: {
+    title: "Inspection request is invalid",
+    guidance: "Check the complete signature and selected Solana network.",
+  },
+};
 
 export const verdictTitles = {
   verified: "Event verified",

@@ -1,21 +1,21 @@
 import "server-only";
 
+import type { TransactionInspection } from "@eventseal/sdk";
 import { createClient } from "@insforge/sdk";
-import type { VerificationResult } from "@eventseal/sdk";
 
 import {
-  createVerifyRoute,
-  VerificationAdapterError,
-} from "../../../lib/verify-route";
+  createInspectionRoute,
+  InspectionAdapterError,
+} from "../../../lib/inspection-route";
 import { parseServiceUrl } from "../../../lib/auth-config-values";
 
 export const runtime = "nodejs";
 
-const handlePost = createVerifyRoute(async (input) => {
+const handlePost = createInspectionRoute(async (input) => {
   const anonKey = process.env.INSFORGE_ANON_KEY?.trim();
 
   if (!anonKey) {
-    throw new VerificationAdapterError("NOT_CONFIGURED");
+    throw new InspectionAdapterError("NOT_CONFIGURED");
   }
 
   let baseUrl: string;
@@ -25,17 +25,17 @@ const handlePost = createVerifyRoute(async (input) => {
       "INSFORGE_BASE_URL",
     );
   } catch {
-    throw new VerificationAdapterError("NOT_CONFIGURED");
+    throw new InspectionAdapterError("NOT_CONFIGURED");
   }
 
   const client = createClient({ baseUrl, anonKey });
-  const { data, error } = await client.functions.invoke<VerificationResult>(
-    "verify-event",
+  const { data, error } = await client.functions.invoke<TransactionInspection>(
+    "inspect-transaction",
     { body: input },
   );
 
   if (error || !data) {
-    throw new VerificationAdapterError("UPSTREAM_FAILED");
+    throw new InspectionAdapterError("UPSTREAM_FAILED");
   }
 
   return data;
