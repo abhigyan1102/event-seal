@@ -6,10 +6,9 @@ alter table public.verification_receipts
   add column event_format text,
   add column event_discriminator text;
 
--- Rows created before this migration remain valid v1 receipts. New writers must
--- explicitly persist the complete v2 verification identity.
-alter table public.verification_receipts
-  alter column receipt_version set default 2;
+-- Rows created before this migration remain valid v1 receipts. Keep v1 as the
+-- default so an older function instance can finish safely during a rolling
+-- deployment. New writers explicitly persist receipt_version = 2.
 
 alter table public.verification_receipts
   add constraint verification_receipts_version_check
@@ -17,25 +16,27 @@ alter table public.verification_receipts
   add constraint verification_receipts_identity_check
     check (
       (
-        receipt_version = 1
-        and commitment is null
-        and reason is null
-        and expected_program_id is null
-        and event_format is null
-        and event_discriminator is null
-      )
-      or
-      (
-        receipt_version = 2
-        and commitment = 'finalized'
-        and length(btrim(reason)) > 0
-        and length(btrim(expected_program_id)) > 0
-        and event_format in ('anchor-log', 'anchor-cpi')
-        and event_discriminator ~ '^[0-9a-f]{16}$'
-        and length(btrim(emitter_program_id)) > 0
-        and event_position >= 0
-        and event_data_hash ~ '^[0-9a-f]{64}$'
-      )
+        (
+          receipt_version = 1
+          and commitment is null
+          and reason is null
+          and expected_program_id is null
+          and event_format is null
+          and event_discriminator is null
+        )
+        or
+        (
+          receipt_version = 2
+          and commitment = 'finalized'
+          and length(btrim(reason)) > 0
+          and length(btrim(expected_program_id)) > 0
+          and event_format in ('anchor-log', 'anchor-cpi')
+          and event_discriminator ~ '^[0-9a-f]{16}$'
+          and length(btrim(emitter_program_id)) > 0
+          and event_position >= 0
+          and event_data_hash ~ '^[0-9a-f]{64}$'
+        )
+      ) is true
     );
 
 create function public.reject_verification_receipt_mutation()

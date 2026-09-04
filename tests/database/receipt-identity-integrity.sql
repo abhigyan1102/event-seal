@@ -12,10 +12,11 @@ grant usage on schema public to anon, authenticated;
 \ir ../../migrations/20260904192157_add-receipt-identity-integrity.sql
 
 insert into public.verification_receipts
-  (receipt_version, receipt_id, signature, cluster, verdict, reason_code)
-values (1, 'legacy-receipt', 'legacy-signature', 'devnet', 'verified', 'VERIFIED');
+  (receipt_id, signature, cluster, verdict, reason_code)
+values ('legacy-receipt', 'legacy-signature', 'devnet', 'verified', 'VERIFIED');
 
 insert into public.verification_receipts (
+  receipt_version,
   receipt_id,
   signature,
   cluster,
@@ -32,6 +33,7 @@ insert into public.verification_receipts (
   event_data_hash,
   evidence
 ) values (
+  2,
   'v2-receipt',
   'v2-signature',
   'devnet',
@@ -79,6 +81,7 @@ begin
 
   -- Insert-only retries must preserve the first immutable receipt.
   insert into public.verification_receipts (
+    receipt_version,
     receipt_id,
     signature,
     cluster,
@@ -93,6 +96,7 @@ begin
     event_position,
     event_data_hash
   ) values (
+    2,
     'v2-receipt',
     'conflicting-signature',
     'devnet',
@@ -126,6 +130,7 @@ begin
 
   begin
     insert into public.verification_receipts (
+      receipt_version,
       receipt_id,
       signature,
       cluster,
@@ -140,6 +145,7 @@ begin
       event_position,
       event_data_hash
     ) values (
+      2,
       'incomplete-v2',
       'incomplete-signature',
       'devnet',
