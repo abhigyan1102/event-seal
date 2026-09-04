@@ -98,6 +98,7 @@ public cluster RPC defaults:
 ```bash
 npx @insforge/cli secrets add SOLANA_RPC_DEVNET_URL <devnet-rpc-url>
 npx @insforge/cli secrets add SOLANA_RPC_MAINNET_URL <mainnet-rpc-url>
+npx @insforge/cli secrets add SOLANA_RPC_TESTNET_URL <testnet-rpc-url>
 ```
 
 For secret rotation or existing keys, update values explicitly:
@@ -107,6 +108,7 @@ npx @insforge/cli secrets update INSFORGE_BASE_URL --value <project-url>
 npx @insforge/cli secrets update INSFORGE_API_KEY --value <server-api-key>
 npx @insforge/cli secrets update SOLANA_RPC_DEVNET_URL --value <devnet-rpc-url>
 npx @insforge/cli secrets update SOLANA_RPC_MAINNET_URL --value <mainnet-rpc-url>
+npx @insforge/cli secrets update SOLANA_RPC_TESTNET_URL --value <testnet-rpc-url>
 npx @insforge/cli secrets update EVENTSEAL_CLUSTER --value devnet
 npx @insforge/cli secrets update EVENTSEAL_EXPECTED_PROGRAM_ID --value <program-id>
 npx @insforge/cli secrets update EVENTSEAL_EVENT_FORMAT --value anchor-log
