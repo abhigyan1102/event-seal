@@ -22,6 +22,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "smoke:devnet-backend": "node scripts/smoke-devnet-backend-proof.mjs",
+    "smoke:mainnet-inspection": "npm run build --workspace @eventseal/sdk && node scripts/smoke-mainnet-inspection.mjs",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
   },

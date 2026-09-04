@@ -21,7 +21,9 @@ const validInput = {
 describe("applyServerRpcUrl", () => {
   it("adds the deployment-owned RPC URL to hosted verify-event input", () => {
     expect(
-      applyServerRpcUrl(validInput, "https://private-rpc.example"),
+      applyServerRpcUrl(validInput, {
+        SOLANA_RPC_DEVNET_URL: "https://private-rpc.example",
+      }),
     ).toEqual({
       ok: true,
       value: { ...validInput, rpcUrl: "https://private-rpc.example" },
@@ -29,16 +31,59 @@ describe("applyServerRpcUrl", () => {
   });
 
   it("leaves input unchanged when no deployment RPC URL is configured", () => {
-    expect(applyServerRpcUrl(validInput, undefined)).toEqual({
+    expect(applyServerRpcUrl(validInput, {})).toEqual({
       ok: true,
       value: validInput,
     });
   });
 
   it("rejects blank deployment RPC URL configuration", () => {
-    expect(applyServerRpcUrl(validInput, "")).toEqual({
+    expect(
+      applyServerRpcUrl(validInput, { SOLANA_RPC_DEVNET_URL: "" }),
+    ).toEqual({
       ok: false,
-      error: "SOLANA_RPC_URL must be a non-empty string when provided",
+      error: "The configured cluster RPC URL must be non-empty",
+    });
+  });
+
+  it("isolates per-network endpoints and explicitly bound legacy overrides", () => {
+    const env = {
+      SOLANA_RPC_MAINNET_URL: "https://mainnet.example",
+      SOLANA_RPC_DEVNET_URL: "https://devnet.example",
+    };
+    expect(
+      applyServerRpcUrl({ ...validInput, cluster: "mainnet-beta" }, env),
+    ).toMatchObject({ value: { rpcUrl: "https://mainnet.example" } });
+    expect(applyServerRpcUrl(validInput, env)).toMatchObject({
+      value: { rpcUrl: "https://devnet.example" },
+    });
+    const legacy = {
+      SOLANA_RPC_URL: "https://devnet.example",
+      SOLANA_RPC_CLUSTER: "devnet",
+    };
+    expect(applyServerRpcUrl(validInput, legacy)).toMatchObject({
+      value: { rpcUrl: legacy.SOLANA_RPC_URL },
+    });
+    expect(
+      applyServerRpcUrl({ ...validInput, cluster: "mainnet-beta" }, legacy),
+    ).toEqual({ ok: true, value: { ...validInput, cluster: "mainnet-beta" } });
+    expect(
+      applyServerRpcUrl(validInput, {
+        SOLANA_RPC_URL: "https://unbound.example",
+      }).ok,
+    ).toBe(false);
+    expect(
+      applyServerRpcUrl(validInput, {
+        SOLANA_RPC_DEVNET_URL: "file:///tmp/test",
+      }).ok,
+    ).toBe(false);
+    expect(
+      applyServerRpcUrl(validInput, {
+        SOLANA_RPC_DEVNET_URL: "http://devnet.example",
+      }),
+    ).toEqual({
+      ok: false,
+      error: "The configured cluster RPC URL must use HTTPS",
     });
   });
 });
@@ -191,7 +236,7 @@ describe("validateWebhookConfiguration", () => {
     EVENTSEAL_EXPECTED_PROGRAM_ID: validInput.expectedProgramId,
     EVENTSEAL_EVENT_FORMAT: "anchor-log",
     EVENTSEAL_EVENT_DISCRIMINATOR: validInput.event.discriminator,
-    SOLANA_RPC_URL: "https://api.devnet.solana.com",
+    SOLANA_RPC_DEVNET_URL: "https://api.devnet.solana.com",
   };
 
   it("accepts valid webhook configuration", () => {
@@ -229,11 +274,11 @@ describe("validateWebhookConfiguration", () => {
     expect(
       validateWebhookConfiguration({
         ...validEnv,
-        SOLANA_RPC_URL: " ",
+        SOLANA_RPC_DEVNET_URL: " ",
       }),
     ).toEqual({
       ok: false,
-      error: "SOLANA_RPC_URL must be a non-empty string when provided",
+      error: "The configured cluster RPC URL must be non-empty",
     });
     expect(
       validateWebhookConfiguration({

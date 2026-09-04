@@ -2,6 +2,7 @@ import { build } from "esbuild";
 
 await build({
   entryPoints: [
+    "functions/inspect-transaction.ts",
     "functions/verify-event.ts",
     "functions/get-receipt.ts",
     "functions/helius-webhook.ts",

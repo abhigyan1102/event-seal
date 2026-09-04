@@ -12,3 +12,9 @@ export type {
   VerifyEventInput,
 } from "./types.js";
 export { verifyEvent } from "./verify-event.js";
+export { inspectTransaction } from "./inspect-transaction.js";
+export type {
+  InspectTransactionInput,
+  LogEventCandidate,
+  TransactionInspection,
+} from "./types.js";

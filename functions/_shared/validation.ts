@@ -1,5 +1,6 @@
 import type {
   EventFormat,
+  InspectTransactionInput,
   SolanaCluster,
   VerifyEventInput,
 } from "../../packages/sdk/src/index.ts";
@@ -12,18 +13,71 @@ type ValidationResult<T> =
 
 type VerifyEventConfiguration = Omit<VerifyEventInput, "signature">;
 
-export function applyServerRpcUrl(
-  input: VerifyEventInput,
-  rpcUrl: string | undefined,
-): ValidationResult<VerifyEventInput> {
+export interface ServerRpcEnvironment {
+  SOLANA_RPC_MAINNET_URL?: string;
+  SOLANA_RPC_DEVNET_URL?: string;
+  SOLANA_RPC_TESTNET_URL?: string;
+  SOLANA_RPC_URL?: string;
+  SOLANA_RPC_CLUSTER?: string;
+}
+
+/** Resolves only an endpoint explicitly bound to the requested network. */
+export function applyServerRpcUrl<
+  T extends Pick<InspectTransactionInput, "cluster">,
+>(
+  input: T,
+  env: ServerRpcEnvironment,
+): ValidationResult<T & { rpcUrl?: string }> {
+  const names = {
+    "mainnet-beta": "SOLANA_RPC_MAINNET_URL",
+    devnet: "SOLANA_RPC_DEVNET_URL",
+    testnet: "SOLANA_RPC_TESTNET_URL",
+  } as const;
+  let rpcUrl = env[names[input.cluster]];
+  if (rpcUrl === undefined && env.SOLANA_RPC_URL !== undefined) {
+    if (!isSolanaCluster(env.SOLANA_RPC_CLUSTER)) {
+      return invalid(
+        "Legacy SOLANA_RPC_URL requires an explicit SOLANA_RPC_CLUSTER binding",
+      );
+    }
+    if (env.SOLANA_RPC_CLUSTER === input.cluster) rpcUrl = env.SOLANA_RPC_URL;
+  }
   if (rpcUrl === undefined) {
     return { ok: true, value: input };
   }
   if (!isNonEmptyString(rpcUrl)) {
-    return invalid("SOLANA_RPC_URL must be a non-empty string when provided");
+    return invalid("The configured cluster RPC URL must be non-empty");
   }
-
+  try {
+    const url = new URL(rpcUrl);
+    if (url.protocol !== "https:")
+      return invalid("The configured cluster RPC URL must use HTTPS");
+  } catch {
+    return invalid("The configured cluster RPC URL must be an absolute URL");
+  }
   return { ok: true, value: { ...input, rpcUrl } };
+}
+
+/** Accepts only signature and cluster at the public inspection boundary. */
+export function validateInspectTransactionInput(
+  value: unknown,
+): ValidationResult<InspectTransactionInput> {
+  if (!isRecord(value)) return invalid("Request body must be a JSON object");
+  if (
+    Object.keys(value).some((key) => key !== "signature" && key !== "cluster")
+  )
+    return invalid("Only signature and cluster are accepted");
+  if (
+    typeof value.signature !== "string" ||
+    !/^[1-9A-HJ-NP-Za-km-z]{64,88}$/.test(value.signature)
+  )
+    return invalid("signature must be a base58 transaction signature");
+  if (!isSolanaCluster(value.cluster))
+    return invalid("cluster must be mainnet-beta, devnet, or testnet");
+  return {
+    ok: true,
+    value: { signature: value.signature, cluster: value.cluster },
+  };
 }
 
 export function validateVerifyEventInput(
@@ -124,13 +178,14 @@ export function validateHeliusPayload(
   return { ok: true, value: [...signatures] };
 }
 
-export function validateWebhookConfiguration(env: {
-  EVENTSEAL_CLUSTER?: string;
-  EVENTSEAL_EXPECTED_PROGRAM_ID?: string;
-  EVENTSEAL_EVENT_FORMAT?: string;
-  EVENTSEAL_EVENT_DISCRIMINATOR?: string;
-  SOLANA_RPC_URL?: string;
-}): ValidationResult<VerifyEventConfiguration> {
+export function validateWebhookConfiguration(
+  env: ServerRpcEnvironment & {
+    EVENTSEAL_CLUSTER?: string;
+    EVENTSEAL_EXPECTED_PROGRAM_ID?: string;
+    EVENTSEAL_EVENT_FORMAT?: string;
+    EVENTSEAL_EVENT_DISCRIMINATOR?: string;
+  },
+): ValidationResult<VerifyEventConfiguration> {
   const cluster = env.EVENTSEAL_CLUSTER;
   if (!isSolanaCluster(cluster)) {
     return invalid(
@@ -155,21 +210,15 @@ export function validateWebhookConfiguration(env: {
     );
   }
 
-  const rpcUrl = env.SOLANA_RPC_URL;
-  if (rpcUrl !== undefined && !isNonEmptyString(rpcUrl)) {
-    return invalid("SOLANA_RPC_URL must be a non-empty string when provided");
-  }
-
-  return {
-    ok: true,
-    value: {
+  return applyServerRpcUrl<VerifyEventConfiguration>(
+    {
       cluster,
       expectedProgramId,
       event: { format, discriminator },
       commitment: "finalized",
-      rpcUrl,
     },
-  };
+    env,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -16,6 +16,7 @@ import {
   validateVerifyEventInput,
   validateWebhookConfiguration,
 } from "./validation.ts";
+import { readRpcEnvironment } from "./rpc-environment.ts";
 
 type GetEnv = (name: string) => string | undefined;
 
@@ -106,7 +107,7 @@ export function createVerifyEventHandler({
       }
       const serverRpcInput = applyServerRpcUrl(
         validation.value,
-        getEnv("SOLANA_RPC_URL"),
+        readRpcEnvironment(getEnv),
       );
       if (!serverRpcInput.ok) {
         logger.error(
@@ -298,7 +299,7 @@ function readHeliusConfiguration(
     EVENTSEAL_EXPECTED_PROGRAM_ID: getEnv("EVENTSEAL_EXPECTED_PROGRAM_ID"),
     EVENTSEAL_EVENT_FORMAT: getEnv("EVENTSEAL_EVENT_FORMAT"),
     EVENTSEAL_EVENT_DISCRIMINATOR: getEnv("EVENTSEAL_EVENT_DISCRIMINATOR"),
-    SOLANA_RPC_URL: getEnv("SOLANA_RPC_URL"),
+    ...readRpcEnvironment(getEnv),
   });
 
   if (!configuration.ok) {
