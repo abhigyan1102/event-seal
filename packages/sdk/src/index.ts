@@ -1,6 +1,13 @@
 export { attributeAnchorLogEvent } from "./events/anchor-log.js";
-export { createReceiptId, hashEventData } from "./receipt.js";
-export type { ReceiptIdentity } from "./receipt.js";
+export {
+  createReceiptId,
+  createVerificationReceiptId,
+  hashEventData,
+} from "./receipt.js";
+export type {
+  ReceiptIdentity,
+  VerificationReceiptIdentity,
+} from "./receipt.js";
 export type {
   EventEvidence,
   EventFormat,

@@ -1,5 +1,5 @@
 import { attributeAnchorLogEvent } from "./events/anchor-log.js";
-import { createReceiptId } from "./receipt.js";
+import { createVerificationReceiptId } from "./receipt.js";
 import { fetchFinalizedTransaction } from "./transaction/fetch.js";
 import type { VerificationResult, VerifyEventInput } from "./types.js";
 
@@ -160,9 +160,13 @@ export async function verifyEvent(
     reason: attribution.reason,
     event: attribution.event,
     receiptId: attribution.event
-      ? createReceiptId({
+      ? createVerificationReceiptId({
           cluster: input.cluster,
+          commitment: "finalized",
           signature: input.signature,
+          expectedProgramId: input.expectedProgramId,
+          eventFormat: input.event.format,
+          eventDiscriminator: input.event.discriminator,
           event: attribution.event,
         })
       : undefined,

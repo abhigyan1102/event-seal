@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { createReceiptId, hashEventData } from "../src/index.js";
+import {
+  createReceiptId,
+  createVerificationReceiptId,
+  hashEventData,
+} from "../src/index.js";
 
 import { EXPECTED_PROGRAM } from "./fixtures.js";
 
@@ -79,6 +83,41 @@ describe("createReceiptId", () => {
     });
 
     expect(original).not.toBe(different);
+  });
+});
+
+describe("createVerificationReceiptId", () => {
+  const verificationIdentity = {
+    ...baseIdentity,
+    commitment: "finalized" as const,
+    expectedProgramId: EXPECTED_PROGRAM,
+    eventFormat: "anchor-log" as const,
+    eventDiscriminator: "0102030405060708",
+  };
+
+  it("is deterministic for the same complete verification identity", () => {
+    expect(createVerificationReceiptId(verificationIdentity)).toBe(
+      createVerificationReceiptId(verificationIdentity),
+    );
+  });
+
+  it("uses a different namespace from the legacy observed-event ID", () => {
+    expect(createVerificationReceiptId(verificationIdentity)).not.toBe(
+      createReceiptId(baseIdentity),
+    );
+  });
+
+  it.each([
+    [
+      "expected program",
+      { expectedProgramId: "11111111111111111111111111111111" },
+    ],
+    ["event format", { eventFormat: "anchor-cpi" as const }],
+    ["event discriminator", { eventDiscriminator: "1111111111111111" }],
+  ])("changes when the trusted %s changes", (_label, change) => {
+    expect(
+      createVerificationReceiptId({ ...verificationIdentity, ...change }),
+    ).not.toBe(createVerificationReceiptId(verificationIdentity));
   });
 });
 

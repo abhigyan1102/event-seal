@@ -19,13 +19,14 @@ grant usage on schema public, auth to anon, authenticated;
 \ir ../../migrations/20260827073314_create-user-receipts.sql
 \ir ../../migrations/20260827091618_restrict-user-receipts-to-save-list.sql
 \ir ../../migrations/20260827165427_restrict-user-receipt-insert-columns.sql
+\ir ../../migrations/20260904192157_add-receipt-identity-integrity.sql
 
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-000000000001'),
   ('00000000-0000-0000-0000-000000000002');
 insert into public.verification_receipts
-  (receipt_id, signature, cluster, verdict, reason_code)
-values ('test-receipt', 'test-signature', 'devnet', 'verified', 'VERIFIED');
+  (receipt_version, receipt_id, signature, cluster, verdict, reason_code)
+values (1, 'test-receipt', 'test-signature', 'devnet', 'verified', 'VERIFIED');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createReceiptId } from "../../packages/sdk/src/index.ts";
 
 import {
   createGetReceiptHandler,
@@ -126,8 +127,37 @@ describe("createVerifyEventHandler", () => {
 });
 
 describe("createGetReceiptHandler", () => {
-  const receiptId = `es_${"a".repeat(64)}`;
-  const receipt = { receipt_id: receiptId, verdict: "verified" };
+  const legacyEvent = {
+    emitterProgramId: validVerifyInput.expectedProgramId,
+    eventPosition: 0,
+    eventDataHash: "a".repeat(64),
+  };
+  const receiptId = createReceiptId({
+    cluster: "devnet",
+    signature: validVerifyInput.signature,
+    event: legacyEvent,
+  });
+  const receipt = {
+    receipt_version: 1,
+    receipt_id: receiptId,
+    signature: validVerifyInput.signature,
+    cluster: "devnet",
+    commitment: null,
+    slot: 100,
+    verdict: "verified",
+    reason_code: "VERIFIED",
+    reason: null,
+    expected_program_id: null,
+    event_format: null,
+    event_discriminator: null,
+    emitter_program_id: legacyEvent.emitterProgramId,
+    event_position: legacyEvent.eventPosition,
+    event_data_hash: legacyEvent.eventDataHash,
+    evidence: [
+      { check: "execution", passed: true, detail: "meta.err is null." },
+    ],
+    created_at: "2026-08-23T14:41:07.516608+00:00",
+  };
 
   function receiptClient(result: {
     data: unknown;
@@ -170,6 +200,7 @@ describe("createGetReceiptHandler", () => {
     });
     expect(spies.from).toHaveBeenCalledWith("verification_receipts");
     expect(spies.eq).toHaveBeenCalledWith("receipt_id", receiptId);
+    expect(spies.select).not.toHaveBeenCalledWith("*");
   });
 
   it("requires a valid receiptId", async () => {
@@ -234,6 +265,40 @@ describe("createGetReceiptHandler", () => {
     expect(testLogger.error).toHaveBeenCalledWith(
       "EventSeal receipt lookup failed",
       databaseError,
+    );
+  });
+
+  it("rejects malformed stored receipts instead of returning partial proof", async () => {
+    const testLogger = logger();
+    const { client } = receiptClient({
+      data: {
+        ...receipt,
+        expected_program_id: validVerifyInput.expectedProgramId,
+      },
+      error: null,
+    });
+    const handler = createGetReceiptHandler({
+      createAdminClient: vi.fn(() => client),
+      getEnv: getEnv({
+        INSFORGE_API_KEY: "server-key",
+        INSFORGE_BASE_URL: "https://project.insforge.app",
+      }),
+      logger: testLogger,
+    });
+
+    const response = await handler(
+      new Request(
+        `https://eventseal.test/functions/get-receipt?receiptId=${receiptId}`,
+      ),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await jsonBody(response)).toEqual({
+      error: "Receipt lookup failed",
+    });
+    expect(testLogger.error).toHaveBeenCalledWith(
+      "EventSeal stored receipt validation failed",
+      { receiptId },
     );
   });
 });

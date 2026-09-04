@@ -5,6 +5,10 @@ import {
   type VerificationResult,
   type VerifyEventInput,
 } from "../../packages/sdk/src/index.ts";
+import {
+  persistVerificationReceipt,
+  type ReceiptPersistenceClient,
+} from "./receipt-persistence.ts";
 
 export async function verifyAndPersist(
   input: VerifyEventInput,
@@ -23,22 +27,11 @@ export async function verifyAndPersist(
   }
 
   const client = createAdminClient({ baseUrl, apiKey });
-  const { error } = await client.database.from("verification_receipts").upsert({
-    receipt_id: result.receiptId,
-    signature: result.signature,
-    cluster: result.cluster,
-    slot: result.slot,
-    verdict: result.verdict,
-    reason_code: result.reasonCode,
-    emitter_program_id: result.event?.emitterProgramId,
-    event_position: result.event?.eventPosition,
-    event_data_hash: result.event?.eventDataHash,
-    evidence: result.evidence,
-  });
-
-  if (error) {
-    throw new Error(`Receipt persistence failed: ${error.message}`);
-  }
+  await persistVerificationReceipt(
+    client as unknown as ReceiptPersistenceClient,
+    input,
+    result,
+  );
 
   return result;
 }

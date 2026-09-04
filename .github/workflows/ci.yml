@@ -35,6 +35,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check saved receipt database permissions
         run: psql -X --host postgres --username postgres --dbname eventseal_test --file tests/database/user-receipt-grants.sql
+      - name: Check receipt identity and immutability
+        run: psql -X --host postgres --username postgres --dbname eventseal_test --file tests/database/receipt-identity-integrity.sql
 
   rust:
     runs-on: ubuntu-latest

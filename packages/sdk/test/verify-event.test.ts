@@ -292,6 +292,30 @@ describe("verifyEvent", () => {
 
       expect(result.verdict).toBe("rejected");
       expect(result.reasonCode).toBe("PROGRAM_MISMATCH");
+      expect(result.receiptId).toMatch(/^es_[0-9a-f]{64}$/);
+    });
+
+    it("binds receipt IDs to the trusted program identity", async () => {
+      const observedProgram = "11111111111111111111111111111111";
+      mockFetch(() =>
+        finalizedSuccessTx([
+          `Program ${observedProgram} invoke [1]`,
+          `Program data: ${EVENT_DATA_B64}`,
+          `Program ${observedProgram} success`,
+        ]),
+      );
+
+      const rejected = await verifyEvent(validInput);
+      const verified = await verifyEvent({
+        ...validInput,
+        expectedProgramId: observedProgram,
+      });
+
+      expect(rejected.reasonCode).toBe("PROGRAM_MISMATCH");
+      expect(verified.reasonCode).toBe("VERIFIED");
+      expect(rejected.receiptId).toBeDefined();
+      expect(verified.receiptId).toBeDefined();
+      expect(rejected.receiptId).not.toBe(verified.receiptId);
     });
 
     it("returns rejected for DISCRIMINATOR_MISMATCH", async () => {

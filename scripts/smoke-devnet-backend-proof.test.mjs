@@ -63,18 +63,43 @@ function verificationResponse(transaction, receipt = undefined) {
     slot: transaction.slot,
     expectedProgramId: fixture.programId,
     receiptId: receipt,
-    evidence: [],
+    event:
+      receipt === undefined
+        ? undefined
+        : {
+            emitterProgramId: fixture.programId,
+            eventPosition: 0,
+            eventDataHash: "a".repeat(64),
+          },
+    evidence: [
+      {
+        check: "attribution",
+        passed: transaction.expectedVerdict === "verified",
+        detail: "test evidence",
+      },
+    ],
   };
 }
 
 function receiptResponse(verification) {
   return {
+    receipt_version: 2,
     receipt_id: verification.receiptId,
     signature: verification.signature,
     cluster: verification.cluster,
+    commitment: verification.commitment,
     slot: verification.slot,
     verdict: verification.verdict,
     reason_code: verification.reasonCode,
+    reason: verification.reason,
+    expected_program_id: verification.expectedProgramId,
+    event_format: fixture.event.format,
+    event_discriminator: fixture.event.discriminator,
+    emitter_program_id: verification.event.emitterProgramId,
+    event_position: verification.event.eventPosition,
+    event_data_hash: verification.event.eventDataHash,
+    evidence: verification.evidence,
+    created_at: "2026-09-04T00:00:00.000Z",
   };
 }
 
@@ -137,6 +162,12 @@ describe("devnet backend proof smoke", () => {
       verdict: "verified",
       reasonCode: "VERIFIED",
       receiptId,
+      receiptLookup: {
+        receiptVersion: 2,
+        expectedProgramId: fixture.programId,
+        eventFormat: "anchor-log",
+        eventDiscriminator: "bf91ff47ac4cb187",
+      },
     });
     expect(proof.transactions.failure).toMatchObject({
       signature: "failure-signature",

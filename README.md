@@ -150,13 +150,19 @@ See the [API reference](./docs/api-reference.md) for all request fields and reas
 
 ## Deterministic receipts
 
-EventSeal derives a receipt ID from immutable event evidence:
+EventSeal derives each new v2 receipt ID from the complete verification identity
+and immutable event evidence:
 
 ```text
-cluster + signature + event position + emitter program + event-data hash
+cluster + finalized commitment + signature + expected program + event format
++ expected discriminator + event position + emitter program + event-data hash
 ```
 
-The resulting `es_<sha256>` identifier is stable across repeated webhook deliveries. The hosted verifier uses it as the primary key when storing a receipt, making delivery idempotent.
+The resulting `es_<sha256>` identifier is stable across repeated webhook
+deliveries but changes when any trusted expectation changes. The hosted verifier
+stores a complete v2 record with insert-only conflict handling, then reads it
+back and checks every field. Existing v1 receipts remain readable; new receipts
+cannot overwrite either version.
 
 ## Local development
 
