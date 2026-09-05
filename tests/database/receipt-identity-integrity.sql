@@ -10,6 +10,7 @@ grant usage on schema public to anon, authenticated;
 
 \ir ../../migrations/20260721000000_create-verification-receipts.sql
 \ir ../../migrations/20260904192157_add-receipt-identity-integrity.sql
+\ir ../../migrations/20260905041246_validate-receipt-identity-constraints.sql
 
 insert into public.verification_receipts
   (receipt_id, signature, cluster, verdict, reason_code)
@@ -55,6 +56,18 @@ do $$
 declare
   mutation_sql text;
 begin
+  if (
+    select count(*) <> 2 or coalesce(bool_or(not convalidated), true)
+    from pg_constraint
+    where conrelid = 'public.verification_receipts'::regclass
+      and conname in (
+        'verification_receipts_version_check',
+        'verification_receipts_identity_check'
+      )
+  ) then
+    raise exception 'Receipt identity constraints were not validated';
+  end if;
+
   if not exists (
     select 1
     from public.verification_receipts

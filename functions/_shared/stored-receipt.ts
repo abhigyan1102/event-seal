@@ -66,6 +66,8 @@ const RECEIPT_KEYS = new Set(STORED_RECEIPT_COLUMNS.split(","));
 const RECEIPT_ID_PATTERN = /^es_[0-9a-f]{64}$/;
 const EVENT_HASH_PATTERN = /^[0-9a-f]{64}$/;
 const DISCRIMINATOR_PATTERN = /^[0-9a-f]{16}$/;
+const TIMESTAMP_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(?:Z|[+-](\d{2}):(\d{2}))$/;
 const VERDICTS: readonly VerificationVerdict[] = [
   "verified",
   "rejected",
@@ -105,8 +107,7 @@ export function isStoredVerificationReceipt(
     !EVENT_HASH_PATTERN.test(value.event_data_hash) ||
     !Array.isArray(value.evidence) ||
     !value.evidence.every(isVerificationEvidence) ||
-    typeof value.created_at !== "string" ||
-    Number.isNaN(Date.parse(value.created_at))
+    !isStrictTimestamp(value.created_at)
   ) {
     return false;
   }
@@ -208,6 +209,55 @@ function isNullableNonNegativeInteger(value: unknown): value is number | null {
 
 function isNonNegativeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+function isStrictTimestamp(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+
+  const match = TIMESTAMP_PATTERN.exec(value);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText] =
+    match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const offsetHour = match[7] === undefined ? 0 : Number(match[7]);
+  const offsetMinute = match[8] === undefined ? 0 : Number(match[8]);
+
+  if (
+    year < 1 ||
+    month < 1 ||
+    month > 12 ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59 ||
+    offsetHour > 23 ||
+    offsetMinute > 59
+  ) {
+    return false;
+  }
+
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [
+    31,
+    leapYear ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
+  return day >= 1 && day <= (daysInMonth[month - 1] ?? 0);
 }
 
 function isOneOf<const T extends readonly string[]>(

@@ -48,6 +48,15 @@ describe("stored receipt validation", () => {
     expect(isStoredVerificationReceipt(v2Receipt)).toBe(true);
   });
 
+  it("accepts PostgreSQL timestamptz precision and offsets", () => {
+    expect(
+      isStoredVerificationReceipt({
+        ...v2Receipt,
+        created_at: "2026-08-23T14:41:07.516608+00:00",
+      }),
+    ).toBe(true);
+  });
+
   it("accepts a self-consistent legacy v1 receipt with unavailable trust fields", () => {
     const legacy = {
       ...v2Receipt,
@@ -81,6 +90,8 @@ describe("stored receipt validation", () => {
     { ...v2Receipt, receipt_version: 3 },
     { ...v2Receipt, event_discriminator: "ABCDEF0123456789" },
     { ...v2Receipt, evidence: [{ ...evidence[0], unexpected: true }] },
+    { ...v2Receipt, created_at: "2026-02-31T00:00:00.000Z" },
+    { ...v2Receipt, created_at: "2026-09-04T19:00:00+24:00" },
   ])("rejects malformed or unexpected stored data", (value) => {
     expect(isStoredVerificationReceipt(value)).toBe(false);
   });

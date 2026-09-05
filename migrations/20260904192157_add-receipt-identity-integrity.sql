@@ -12,7 +12,7 @@ alter table public.verification_receipts
 
 alter table public.verification_receipts
   add constraint verification_receipts_version_check
-    check (receipt_version in (1, 2)),
+    check (receipt_version in (1, 2)) not valid,
   add constraint verification_receipts_identity_check
     check (
       (
@@ -37,7 +37,7 @@ alter table public.verification_receipts
           and event_data_hash ~ '^[0-9a-f]{64}$'
         )
       ) is true
-    );
+    ) not valid;
 
 create function public.reject_verification_receipt_mutation()
 returns trigger

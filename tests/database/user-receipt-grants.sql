@@ -20,6 +20,7 @@ grant usage on schema public, auth to anon, authenticated;
 \ir ../../migrations/20260827091618_restrict-user-receipts-to-save-list.sql
 \ir ../../migrations/20260827165427_restrict-user-receipt-insert-columns.sql
 \ir ../../migrations/20260904192157_add-receipt-identity-integrity.sql
+\ir ../../migrations/20260905041246_validate-receipt-identity-constraints.sql
 
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-000000000001'),
