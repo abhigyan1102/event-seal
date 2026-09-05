@@ -348,6 +348,61 @@ describe("devnet backend proof smoke", () => {
     ).rejects.toThrow("receipt_id mismatch");
   });
 
+  it("rejects matching non-finalized verification and receipt commitments", async () => {
+    const { path } = await writeFixture();
+    const success = {
+      ...verificationResponse(fixture.transactions.success, receiptId),
+      commitment: "confirmed",
+    };
+    const failure = verificationResponse(fixture.transactions.failure);
+    const fetchFn = async (url, init) => {
+      if (url.endsWith("/functions/verify-event")) {
+        return response(
+          JSON.parse(init.body).signature === "success-signature"
+            ? success
+            : failure,
+        );
+      }
+      return response(receiptResponse(success));
+    };
+
+    await expect(
+      runBackendProofSmoke(
+        { baseUrl: "https://eventseal.test", fixture: path },
+        fetchFn,
+      ),
+    ).rejects.toThrow("success transaction commitment mismatch");
+  });
+
+  it("rejects a non-finalized receipt commitment independently", async () => {
+    const { path } = await writeFixture();
+    const success = verificationResponse(
+      fixture.transactions.success,
+      receiptId,
+    );
+    const failure = verificationResponse(fixture.transactions.failure);
+    const fetchFn = async (url, init) => {
+      if (url.endsWith("/functions/verify-event")) {
+        return response(
+          JSON.parse(init.body).signature === "success-signature"
+            ? success
+            : failure,
+        );
+      }
+      return response({
+        ...receiptResponse(success),
+        commitment: "confirmed",
+      });
+    };
+
+    await expect(
+      runBackendProofSmoke(
+        { baseUrl: "https://eventseal.test", fixture: path },
+        fetchFn,
+      ),
+    ).rejects.toThrow("receipt commitment mismatch");
+  });
+
   it("parses CLI overrides", () => {
     const options = parseCliArgs([
       "--base-url",

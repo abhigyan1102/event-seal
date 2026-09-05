@@ -119,6 +119,23 @@ describe("createVerificationReceiptId", () => {
       createVerificationReceiptId({ ...verificationIdentity, ...change }),
     ).not.toBe(createVerificationReceiptId(verificationIdentity));
   });
+
+  it("preserves field boundaries when values contain separators", () => {
+    const separatorInSignature = {
+      ...verificationIdentity,
+      signature: "sig:expected",
+      expectedProgramId: "program",
+    };
+    const separatorInProgram = {
+      ...verificationIdentity,
+      signature: "sig",
+      expectedProgramId: "expected:program",
+    };
+
+    expect(createVerificationReceiptId(separatorInSignature)).not.toBe(
+      createVerificationReceiptId(separatorInProgram),
+    );
+  });
 });
 
 describe("hashEventData", () => {

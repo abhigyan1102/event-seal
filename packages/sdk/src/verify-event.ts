@@ -25,6 +25,8 @@ export async function verifyEvent(
   if (
     !input.signature ||
     !input.expectedProgramId ||
+    (input.event.format !== "anchor-log" &&
+      input.event.format !== "anchor-cpi") ||
     !DISCRIMINATOR_PATTERN.test(input.event.discriminator)
   ) {
     return {
@@ -32,7 +34,7 @@ export async function verifyEvent(
       verdict: "indeterminate",
       reasonCode: "INVALID_REQUEST",
       reason:
-        "Signature, program ID, and a 16-character lowercase hex discriminator are required.",
+        "Signature, program ID, a supported event format, and a 16-character lowercase hex discriminator are required.",
     };
   }
 

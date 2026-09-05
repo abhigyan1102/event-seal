@@ -244,6 +244,7 @@ function assertVerificationResult(label, result, options) {
     `${label} expectedProgramId`,
   );
   assertEqual(result.slot, transaction.slot, `${label} slot`);
+  assertEqual(result.commitment, "finalized", `${label} commitment`);
   assertEqual(result.verdict, expected.verdict, `${label} verdict`);
   assertEqual(result.reasonCode, expected.reasonCode, `${label} reasonCode`);
 
@@ -273,11 +274,7 @@ function assertReceipt(receipt, verification, fixture) {
   assertEqual(receipt.receipt_id, verification.receiptId, "receipt_id");
   assertEqual(receipt.signature, verification.signature, "receipt signature");
   assertEqual(receipt.cluster, verification.cluster, "receipt cluster");
-  assertEqual(
-    receipt.commitment,
-    verification.commitment,
-    "receipt commitment",
-  );
+  assertEqual(receipt.commitment, "finalized", "receipt commitment");
   assertEqual(Number(receipt.slot), verification.slot, "receipt slot");
   assertEqual(receipt.verdict, verification.verdict, "receipt verdict");
   assertEqual(

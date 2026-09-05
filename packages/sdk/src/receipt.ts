@@ -39,7 +39,7 @@ export function createReceiptId(identity: ReceiptIdentity): string {
 export function createVerificationReceiptId(
   identity: VerificationReceiptIdentity,
 ): string {
-  const canonical = [
+  const canonical = JSON.stringify([
     "eventseal:v2",
     identity.cluster,
     identity.commitment,
@@ -50,7 +50,7 @@ export function createVerificationReceiptId(
     identity.event.eventPosition.toString(10),
     identity.event.emitterProgramId,
     identity.event.eventDataHash,
-  ].join(":");
+  ]);
 
   return `es_${bytesToHex(sha256(new TextEncoder().encode(canonical)))}`;
 }

@@ -107,6 +107,18 @@ describe("verifyEvent", () => {
       expect(result.verdict).toBe("indeterminate");
       expect(result.reasonCode).toBe("INVALID_REQUEST");
     });
+
+    it("returns indeterminate for an unsupported runtime event format", async () => {
+      const fetchSpy = vi.spyOn(fetchModule, "fetchFinalizedTransaction");
+      const result = await verifyEvent({
+        ...validInput,
+        event: { ...validInput.event, format: "other" },
+      } as unknown as VerifyEventInput);
+
+      expect(result.verdict).toBe("indeterminate");
+      expect(result.reasonCode).toBe("INVALID_REQUEST");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
   });
 
   // --- RPC_UNAVAILABLE ---------------------------------------------------

@@ -88,9 +88,9 @@ template, see [`docs/insforge-deploy-runbook.md`](../docs/insforge-deploy-runboo
 
 InsForge exposes deployed functions under `/functions/{slug}`:
 
-| Method | Route                            | Notes                                                                                    |
-| ------ | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| `POST` | `/functions/inspect-transaction` | JSON `{ signature, cluster }`; 4 KiB streamed body limit; read-only, no receipt.         |
-| `POST` | `/functions/verify-event`        | Body must match the SDK `VerifyEventInput` shape except `rpcUrl`, which is server-owned. |
-| `GET`  | `/functions/get-receipt`         | Requires `receiptId`; returns only a self-consistent v1 or v2 stored record.             |
-| `POST` | `/functions/helius-webhook`      | Requires `X-EventSeal-Webhook-Secret`; body is a Helius transactions array.              |
+| Method | Route                            | Notes                                                                                        |
+| ------ | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST` | `/functions/inspect-transaction` | JSON `{ signature, cluster }`; 4 KiB streamed body limit; read-only, no receipt.             |
+| `POST` | `/functions/verify-event`        | Body must match the SDK `VerifyEventInput` shape except `rpcUrl`, which is server-owned.     |
+| `GET`  | `/functions/get-receipt`         | Requires query parameter `receiptId`; returns only a self-consistent v1 or v2 stored record. |
+| `POST` | `/functions/helius-webhook`      | Requires `X-EventSeal-Webhook-Secret`; body is a Helius transactions array.                  |
