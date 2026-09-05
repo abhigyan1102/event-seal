@@ -294,7 +294,7 @@ function isNonNegativeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) >= 0;
 }
 
-function isStrictTimestamp(value: unknown): value is string {
+export function isStrictTimestamp(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const match = TIMESTAMP_PATTERN.exec(value);
   if (!match) return false;

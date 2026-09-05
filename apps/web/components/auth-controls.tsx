@@ -1,7 +1,7 @@
 import type { UserSchema } from "@insforge/sdk";
-import Link from "next/link";
 
 import { signInWithGitHub, signOut } from "../app/auth/actions";
+import { ActiveNavLink } from "./active-nav-link";
 
 export function AuthControls({ user }: { user: UserSchema | null }) {
   if (!user) {
@@ -16,9 +16,9 @@ export function AuthControls({ user }: { user: UserSchema | null }) {
 
   return (
     <div className="nav-auth">
-      <Link className="nav-link nav-link--history" href="/history">
-        History
-      </Link>
+      <ActiveNavLink className="nav-link--history" href="/dashboard">
+        Dashboard
+      </ActiveNavLink>
       <form action={signOut}>
         <button className="nav-auth__button" type="submit">
           Sign out

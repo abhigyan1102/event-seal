@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { initialSaveReceiptState } from "../lib/receipt-action-state";
-import { saveReceipt } from "./receipt-actions";
+import {
+  initialRemoveReceiptState,
+  initialSaveReceiptState,
+} from "../lib/receipt-action-state";
+import { removeReceipt, saveReceipt } from "./receipt-actions";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn<() => Promise<{ id: string } | null>>(),
   createAuthenticatedClient: vi.fn(),
   from: vi.fn(),
   upsert: vi.fn<() => Promise<{ error: unknown }>>(),
+  delete: vi.fn(),
+  eq: vi.fn<() => Promise<{ error: unknown }>>(),
   revalidatePath: vi.fn(),
 }));
 
@@ -31,8 +36,10 @@ beforeEach(() => {
   mocks.createAuthenticatedClient.mockResolvedValue({
     database: { from: mocks.from },
   });
-  mocks.from.mockReturnValue({ upsert: mocks.upsert });
+  mocks.from.mockReturnValue({ upsert: mocks.upsert, delete: mocks.delete });
   mocks.upsert.mockResolvedValue({ error: null });
+  mocks.delete.mockReturnValue({ eq: mocks.eq });
+  mocks.eq.mockResolvedValue({ error: null });
 });
 
 describe("saveReceipt", () => {
@@ -69,14 +76,14 @@ describe("saveReceipt", () => {
 
     await expect(saveReceipt(initialSaveReceiptState, form)).resolves.toEqual({
       status: "saved",
-      message: "Receipt saved to your history.",
+      message: "Receipt saved to your dashboard.",
     });
     expect(mocks.from).toHaveBeenCalledWith("user_receipts");
     expect(mocks.upsert).toHaveBeenCalledWith([{ receipt_id: receiptId }], {
       onConflict: "user_id,receipt_id",
       ignoreDuplicates: true,
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/history");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard");
   });
 
   it("uses the same conflict handling for repeated saves", async () => {
@@ -118,5 +125,72 @@ describe("saveReceipt", () => {
     });
     expect(mocks.upsert).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe("removeReceipt", () => {
+  it("rejects malformed or missing IDs before accessing authentication or the database", async () => {
+    for (const form of [receiptForm("invalid"), new FormData()]) {
+      await expect(
+        removeReceipt(initialRemoveReceiptState, form),
+      ).resolves.toEqual({
+        status: "error",
+        message: "This receipt ID is invalid.",
+      });
+    }
+    expect(mocks.getCurrentUser).not.toHaveBeenCalled();
+    expect(mocks.createAuthenticatedClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects anonymous removal without accessing the database", async () => {
+    mocks.getCurrentUser.mockResolvedValue(null);
+
+    await expect(
+      removeReceipt(initialRemoveReceiptState, receiptForm()),
+    ).resolves.toEqual({
+      status: "error",
+      message: "Sign in to remove this receipt.",
+    });
+    expect(mocks.createAuthenticatedClient).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("removes only the requested reference through the authenticated client", async () => {
+    const form = receiptForm();
+    form.set("user_id", "another-user");
+
+    await expect(
+      removeReceipt(initialRemoveReceiptState, form),
+    ).resolves.toEqual({
+      status: "removed",
+      message: "Receipt removed from your dashboard.",
+    });
+    expect(mocks.from).toHaveBeenCalledWith("user_receipts");
+    expect(mocks.delete).toHaveBeenCalledOnce();
+    expect(mocks.eq).toHaveBeenCalledWith("receipt_id", receiptId);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("sanitizes database and client failures", async () => {
+    mocks.eq.mockResolvedValueOnce({
+      error: { message: "private database details" },
+    });
+    await expect(
+      removeReceipt(initialRemoveReceiptState, receiptForm()),
+    ).resolves.toEqual({
+      status: "error",
+      message: "The receipt could not be removed.",
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+
+    mocks.createAuthenticatedClient.mockRejectedValueOnce(
+      new Error("private configuration details"),
+    );
+    await expect(
+      removeReceipt(initialRemoveReceiptState, receiptForm()),
+    ).resolves.toEqual({
+      status: "error",
+      message: "The receipt could not be removed.",
+    });
   });
 });

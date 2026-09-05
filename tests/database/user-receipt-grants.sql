@@ -21,6 +21,7 @@ grant usage on schema public, auth to anon, authenticated;
 \ir ../../migrations/20260827165427_restrict-user-receipt-insert-columns.sql
 \ir ../../migrations/20260904192157_add-receipt-identity-integrity.sql
 \ir ../../migrations/20260905041246_validate-receipt-identity-constraints.sql
+\ir ../../migrations/20260905143539_enable-user-receipt-removal.sql
 
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-000000000001'),
@@ -68,10 +69,9 @@ begin
     raise exception 'Database ownership/timestamp defaults were not preserved';
   end if;
 
-  -- Preserve the current save/list-only surface.
+  -- Account controls permit owner-scoped deletion, but never updates.
   foreach forbidden_sql in array array[
-    'update public.user_receipts set saved_at = ''2099-01-01T00:00:00Z''',
-    'delete from public.user_receipts'
+    'update public.user_receipts set saved_at = ''2099-01-01T00:00:00Z'''
   ] loop
     begin
       execute forbidden_sql;
@@ -80,6 +80,13 @@ begin
       null;
     end;
   end loop;
+
+  delete from public.user_receipts where receipt_id = 'test-receipt';
+  if exists (select 1 from public.user_receipts) then
+    raise exception 'The owner could not remove their saved reference';
+  end if;
+
+  insert into public.user_receipts (receipt_id) values ('test-receipt');
 end;
 $$;
 
@@ -94,6 +101,17 @@ begin
   if (select count(*) from public.user_receipts) <> 1 then
     raise exception 'Another account cannot independently save the same receipt';
   end if;
+
+  delete from public.user_receipts
+    where user_id = '00000000-0000-0000-0000-000000000001';
+  if (select count(*) from public.user_receipts) <> 1 then
+    raise exception 'An account removed another account''s saved reference';
+  end if;
+
+  delete from public.user_receipts where receipt_id = 'test-receipt';
+  if exists (select 1 from public.user_receipts) then
+    raise exception 'The second owner could not remove their saved reference';
+  end if;
 end;
 $$;
 
@@ -105,7 +123,8 @@ declare
 begin
   foreach forbidden_sql in array array[
     'select * from public.user_receipts',
-    'insert into public.user_receipts (receipt_id) values (''test-receipt'')'
+    'insert into public.user_receipts (receipt_id) values (''test-receipt'')',
+    'delete from public.user_receipts'
   ] loop
     begin
       execute forbidden_sql;

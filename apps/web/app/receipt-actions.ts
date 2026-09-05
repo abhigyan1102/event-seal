@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { createAuthenticatedClient, getCurrentUser } from "../lib/auth-server";
-import type { SaveReceiptState } from "../lib/receipt-action-state";
+import type {
+  RemoveReceiptState,
+  SaveReceiptState,
+} from "../lib/receipt-action-state";
 import { isReceiptId } from "../lib/receipt-id";
 
 export async function saveReceipt(
@@ -31,9 +34,45 @@ export async function saveReceipt(
     if (error) {
       return { status: "error", message: "The receipt could not be saved." };
     }
-    revalidatePath("/history");
-    return { status: "saved", message: "Receipt saved to your history." };
+    revalidatePath("/dashboard");
+    return { status: "saved", message: "Receipt saved to your dashboard." };
   } catch {
     return { status: "error", message: "The receipt could not be saved." };
+  }
+}
+
+export async function removeReceipt(
+  _previous: RemoveReceiptState,
+  formData: FormData,
+): Promise<RemoveReceiptState> {
+  const receiptId = formData.get("receiptId");
+  if (typeof receiptId !== "string" || !isReceiptId(receiptId)) {
+    return { status: "error", message: "This receipt ID is invalid." };
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    return { status: "error", message: "Sign in to remove this receipt." };
+  }
+
+  try {
+    const client = await createAuthenticatedClient();
+    const { error } = await client.database
+      .from("user_receipts")
+      .delete()
+      .eq("receipt_id", receiptId);
+    if (error) {
+      return {
+        status: "error",
+        message: "The receipt could not be removed.",
+      };
+    }
+    revalidatePath("/dashboard");
+    return {
+      status: "removed",
+      message: "Receipt removed from your dashboard.",
+    };
+  } catch {
+    return { status: "error", message: "The receipt could not be removed." };
   }
 }

@@ -1,9 +1,11 @@
 import "@fontsource-variable/outfit";
+import "@fontsource-variable/geist";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AuthControls } from "../components/auth-controls";
+import { ActiveNavLink } from "../components/active-nav-link";
 import { getCurrentUser } from "../lib/auth-server";
 
 import "./globals.css";
@@ -35,9 +37,7 @@ export default async function RootLayout({
             >
               EventSeal
             </Link>
-            <Link className="nav-link nav-link--active" href="/verify">
-              Verify
-            </Link>
+            <ActiveNavLink href="/verify">Verify</ActiveNavLink>
             <a
               className="nav-link nav-link--external"
               href="https://github.com/abhigyan1102/event-seal"
