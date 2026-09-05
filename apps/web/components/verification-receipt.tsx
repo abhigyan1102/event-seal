@@ -1,6 +1,7 @@
 "use client";
 
 import type { VerificationResult } from "@eventseal/sdk";
+import Link from "next/link";
 import { useState } from "react";
 
 import type { BrowserVerifyEventInput } from "../lib/verification-request";
@@ -139,15 +140,20 @@ export function VerificationReceipt({
           Copy result JSON
         </button>
         {receiptId && (
-          <button
-            className="text-button"
-            type="button"
-            onClick={() => {
-              void copy(receiptId, "Receipt ID");
-            }}
-          >
-            Copy receipt ID
-          </button>
+          <>
+            <button
+              className="text-button"
+              type="button"
+              onClick={() => {
+                void copy(receiptId, "Receipt ID");
+              }}
+            >
+              Copy receipt ID
+            </button>
+            <Link className="text-link" href={`/receipts/${receiptId}`}>
+              Open public receipt
+            </Link>
+          </>
         )}
       </div>
       <p className="copy-status" role="status">
