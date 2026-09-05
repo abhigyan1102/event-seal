@@ -67,7 +67,7 @@ export function DashboardView({
     <main className="account-dashboard" ref={scope}>
       <section className="account-dashboard__hero" data-dashboard-reveal>
         <div>
-          <p className="eyebrow">Private account dashboard</p>
+          <p className="eyebrow">Private saved receipts</p>
           <h1>Your verification receipts.</h1>
           <p>
             Review saved outcomes and trusted event identity without repeating

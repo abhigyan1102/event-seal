@@ -18,8 +18,8 @@ export default function DashboardError({
   return (
     <main className="dashboard-boundary">
       <div className="dashboard-boundary__content">
-        <p className="eyebrow">Private account dashboard</p>
-        <h1>The dashboard could not load.</h1>
+        <p className="eyebrow">Private saved receipts</p>
+        <h1>Your saved receipts could not load.</h1>
         <p>
           No receipt data was changed. Try loading your saved evidence again.
         </p>

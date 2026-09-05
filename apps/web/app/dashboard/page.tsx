@@ -25,7 +25,7 @@ export default async function DashboardPage({
     return (
       <main className="dashboard-boundary">
         <div className="dashboard-boundary__content">
-          <p className="eyebrow">Private account dashboard</p>
+          <p className="eyebrow">Private saved receipts</p>
           <h1>Your saved evidence stays tied to your account.</h1>
           <p>
             Verification remains public. Sign in only when you want a private,
@@ -49,7 +49,7 @@ export default async function DashboardPage({
     return (
       <main className="dashboard-boundary">
         <div className="dashboard-boundary__content" role="alert">
-          <p className="eyebrow">Private account dashboard</p>
+          <p className="eyebrow">Private saved receipts</p>
           <h1>Saved receipts are unavailable.</h1>
           <p>
             EventSeal could not load your private history. No receipt data was

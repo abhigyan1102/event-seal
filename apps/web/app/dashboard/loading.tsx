@@ -4,7 +4,7 @@ export default function DashboardLoading() {
       <div className="dashboard-boundary__content">
         <div className="loading-line loading-line--title" />
         <div className="loading-line" />
-        <p>Preparing your receipt dashboard.</p>
+        <p>Preparing your saved receipts.</p>
       </div>
     </main>
   );

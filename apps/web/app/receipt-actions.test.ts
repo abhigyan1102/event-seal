@@ -76,7 +76,7 @@ describe("saveReceipt", () => {
 
     await expect(saveReceipt(initialSaveReceiptState, form)).resolves.toEqual({
       status: "saved",
-      message: "Receipt saved to your dashboard.",
+      message: "Receipt added to your saved receipts.",
     });
     expect(mocks.from).toHaveBeenCalledWith("user_receipts");
     expect(mocks.upsert).toHaveBeenCalledWith([{ receipt_id: receiptId }], {
@@ -163,7 +163,7 @@ describe("removeReceipt", () => {
       removeReceipt(initialRemoveReceiptState, form),
     ).resolves.toEqual({
       status: "removed",
-      message: "Receipt removed from your dashboard.",
+      message: "Receipt removed from your saved receipts.",
     });
     expect(mocks.from).toHaveBeenCalledWith("user_receipts");
     expect(mocks.delete).toHaveBeenCalledOnce();

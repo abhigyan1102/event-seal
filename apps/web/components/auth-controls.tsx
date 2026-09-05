@@ -17,7 +17,7 @@ export function AuthControls({ user }: { user: UserSchema | null }) {
   return (
     <div className="nav-auth">
       <ActiveNavLink className="nav-link--history" href="/dashboard">
-        Dashboard
+        Saved receipts
       </ActiveNavLink>
       <form action={signOut}>
         <button className="nav-auth__button" type="submit">

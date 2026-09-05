@@ -35,7 +35,10 @@ export async function saveReceipt(
       return { status: "error", message: "The receipt could not be saved." };
     }
     revalidatePath("/dashboard");
-    return { status: "saved", message: "Receipt saved to your dashboard." };
+    return {
+      status: "saved",
+      message: "Receipt added to your saved receipts.",
+    };
   } catch {
     return { status: "error", message: "The receipt could not be saved." };
   }
@@ -70,7 +73,7 @@ export async function removeReceipt(
     revalidatePath("/dashboard");
     return {
       status: "removed",
-      message: "Receipt removed from your dashboard.",
+      message: "Receipt removed from your saved receipts.",
     };
   } catch {
     return { status: "error", message: "The receipt could not be removed." };
