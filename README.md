@@ -198,13 +198,13 @@ Enable GitHub in the selected InsForge environment and allow `http://localhost:3
 
 When preparing a backend branch, also check the function secrets: `INSFORGE_BASE_URL` must target that branch and `INSFORGE_API_KEY` must be its administrative key. A copied key from another environment can allow verification to reach the persistence step but fail to store any receipt. Check function logs for the underlying error; keep the browser error sanitized and never put the administrative key in web configuration or Git.
 
-Anyone can verify an event. GitHub sign-in is optional and creates an account on the first successful sign-in. Once signed in, click **Save receipt** on an issued receipt, then open **History** (`/history`).
+Anyone can verify an event. GitHub sign-in is optional and creates an account on the first successful sign-in. Once signed in, click **Save receipt** on an issued receipt, then open **Saved receipts** (`/dashboard`).
 
-Saved references are stored in Postgres, not browser storage. Refreshing the page or signing out does not delete them; sign back into the same account and backend environment to view them. The current history screen shows the latest 25 references, without pagination. The verifier's current form/result is temporary and resets on refresh. Saving the same receipt again does not create a duplicate.
+Saved references are stored in Postgres, not browser storage. Refreshing the page or signing out does not delete them; sign back into the same account and backend environment to view them. Saved receipt results can be filtered by verdict and Solana cluster and are paginated at eight receipts per page. The verifier's current form/result is temporary and resets on refresh. Saving the same receipt again does not create a duplicate.
 
-Only the owning account can read its saved list. Receipt evidence remains publicly readable by receipt ID; saving it does not make the underlying evidence private. The full account dashboard and shareable receipt pages are separate upcoming features.
+Only the owning account can read or remove entries from its saved list. Receipt evidence remains publicly readable by receipt ID; saving it does not make the underlying evidence private. Saved receipt rows expose the stored verdict, cluster, transaction, trusted program identity, discriminator, and public receipt link.
 
-Before release, verify a real issued receipt can be saved, remains in History after a hard refresh and sign-out/sign-in, and is absent from another account's History. Confirm the same behavior against Production before directing customers there; preview data is not transferred by changing the web app's backend URL.
+Before release, verify a real issued receipt can be saved, remains in **Saved receipts** after a hard refresh and sign-out/sign-in, and is absent from another account's saved receipts. Confirm the same behavior against Production before directing customers there; preview data is not transferred by changing the web app's backend URL.
 
 ### Useful commands
 
