@@ -1,6 +1,20 @@
 "use client";
 
-export default function DashboardError({ reset }: { reset: () => void }) {
+import { useEffect } from "react";
+
+export default function DashboardError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    if (error.digest) {
+      console.error("Dashboard error digest:", error.digest);
+    }
+  }, [error]);
+
   return (
     <main className="dashboard-boundary">
       <div className="dashboard-boundary__content">

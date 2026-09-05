@@ -19,7 +19,7 @@ export function RemoveReceiptControl({ receiptId }: { receiptId: string }) {
         type="button"
         onClick={() => setConfirming(true)}
       >
-        Remove from history
+        Remove from dashboard
       </button>
     );
   }

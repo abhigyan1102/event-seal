@@ -2,6 +2,7 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import Form from "next/form";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
@@ -110,7 +111,7 @@ export function DashboardView({
           </p>
         </div>
 
-        <form className="dashboard-filters" action="/dashboard" method="get">
+        <Form className="dashboard-filters" action="/dashboard">
           <fieldset>
             <legend>Outcome</legend>
             <div className="dashboard-filters__verdicts">
@@ -139,7 +140,7 @@ export function DashboardView({
           <button className="dashboard-filters__apply" type="submit">
             Apply filters
           </button>
-        </form>
+        </Form>
 
         {receiptPage.items.length === 0 ? (
           <div className="dashboard-empty">
@@ -183,7 +184,7 @@ export function DashboardView({
           </div>
         )}
 
-        <div className="dashboard-pagination" aria-label="Receipt pages">
+        <nav className="dashboard-pagination" aria-label="Receipt pages">
           {receiptPage.page > 1 ? (
             <Link href={dashboardHref(filters, receiptPage.page - 1)}>
               ← Previous
@@ -201,7 +202,7 @@ export function DashboardView({
           ) : (
             <span aria-disabled="true">Next →</span>
           )}
-        </div>
+        </nav>
       </section>
 
       <section className="dashboard-next" data-dashboard-reveal>
