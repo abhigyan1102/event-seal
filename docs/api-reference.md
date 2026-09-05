@@ -48,7 +48,14 @@ InsForge exposes each deployed handler under `/functions/{slug}`.
 
 ### `verify-event`
 
-Send a `POST` request whose JSON body matches `VerifyEventInput` except for `rpcUrl`. Hosted verification uses the deployment-owned RPC endpoint configuration, not a caller-supplied endpoint. The function returns `VerificationResult` and stores results that have a deterministic receipt ID.
+Send a `POST` request whose JSON body matches `VerifyEventInput` except for
+`rpcUrl`. Hosted verification uses the deployment-owned RPC endpoint
+configuration, not a caller-supplied endpoint. The function returns
+`VerificationResult` and stores results that have a deterministic receipt ID.
+New v2 receipt IDs bind the cluster, finalized commitment, signature, expected
+program, event format, expected discriminator, and attributed event evidence.
+The stored record is insert-only and is checked against the verification result
+after every write attempt.
 
 ### `get-receipt`
 
@@ -57,6 +64,10 @@ Send a `GET` request with `receiptId` as a query parameter:
 ```text
 /functions/get-receipt?receiptId=es_<sha256>
 ```
+
+The response is either a legacy v1 record or a complete v2 record. The handler
+recomputes the version-specific receipt ID and fails closed if stored fields are
+missing, unexpected, or inconsistent.
 
 ### `helius-webhook`
 

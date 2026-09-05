@@ -188,9 +188,11 @@ Then confirm the migration appears in remote history:
 npx @insforge/cli db migrations list
 ```
 
-The receipt migration creates `public.verification_receipts`, enables RLS,
-allows public read access, and keeps writes server-only through the InsForge
-admin client.
+The receipt migrations create `public.verification_receipts`, enable RLS,
+allow public read access, and keep writes server-only through the InsForge
+admin client. V2 adds the complete trusted verification identity and rejects
+updates or deletes; the function writer uses insert-only conflict handling and
+checks the stored record after each attempt.
 
 ## Deploy functions
 

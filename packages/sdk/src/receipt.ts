@@ -1,7 +1,7 @@
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 
-import type { EventEvidence, SolanaCluster } from "./types.js";
+import type { EventEvidence, EventFormat, SolanaCluster } from "./types.js";
 
 export interface ReceiptIdentity {
   cluster: SolanaCluster;
@@ -9,7 +9,19 @@ export interface ReceiptIdentity {
   event: EventEvidence;
 }
 
-/** Creates a stable, content-addressed ID for idempotent webhook processing. */
+export interface VerificationReceiptIdentity extends ReceiptIdentity {
+  commitment: "finalized";
+  expectedProgramId: string;
+  eventFormat: EventFormat;
+  eventDiscriminator: string;
+}
+
+/**
+ * Creates the legacy v1 ID for an observed event.
+ *
+ * @deprecated New verification receipts must use `createVerificationReceiptId`
+ * so the ID also binds the independently trusted event identity.
+ */
 export function createReceiptId(identity: ReceiptIdentity): string {
   const canonical = [
     "eventseal:v1",
@@ -19,6 +31,26 @@ export function createReceiptId(identity: ReceiptIdentity): string {
     identity.event.emitterProgramId,
     identity.event.eventDataHash,
   ].join(":");
+
+  return `es_${bytesToHex(sha256(new TextEncoder().encode(canonical)))}`;
+}
+
+/** Creates a stable v2 ID that binds the trusted request and observed event. */
+export function createVerificationReceiptId(
+  identity: VerificationReceiptIdentity,
+): string {
+  const canonical = JSON.stringify([
+    "eventseal:v2",
+    identity.cluster,
+    identity.commitment,
+    identity.signature,
+    identity.expectedProgramId,
+    identity.eventFormat,
+    identity.eventDiscriminator,
+    identity.event.eventPosition.toString(10),
+    identity.event.emitterProgramId,
+    identity.event.eventDataHash,
+  ]);
 
   return `es_${bytesToHex(sha256(new TextEncoder().encode(canonical)))}`;
 }

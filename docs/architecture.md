@@ -62,7 +62,8 @@ sequenceDiagram
   Verifier->>Verifier: Match discriminator and emitter
   alt Event is attributable
     Verifier-->>Gateway: Verdict and deterministic receipt ID
-    Gateway->>Store: Upsert receipt by receipt ID
+    Gateway->>Store: Insert receipt if absent
+    Gateway->>Store: Read back and compare complete receipt
     Gateway-->>Consumer: Verification result
   else Evidence is missing or contradictory
     Verifier-->>Gateway: Rejected or indeterminate result
@@ -82,7 +83,12 @@ The verifier relies on the selected RPC endpoint for finalized transaction data.
 
 ### Receipt storage
 
-Receipt IDs are content-addressed from immutable evidence. The database permits public reads but reserves writes for server-side credentials. Repeated deliveries upsert the same primary key.
+V2 receipt IDs are content-addressed from the trusted request identity and
+immutable event evidence. The database permits public reads but reserves writes
+for server-side credentials. Repeated deliveries use insert-only conflict
+handling, and the writer reads the record back to reject any collision or field
+mismatch. Database triggers reject updates and deletes. Legacy v1 receipts
+remain readable through version-specific validation.
 
 ### Demonstration program
 

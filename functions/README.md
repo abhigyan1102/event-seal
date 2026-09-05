@@ -74,7 +74,8 @@ Deployment order matters:
 
 1. Build bundled function files with `npm run build:functions`.
 2. Link the local checkout to the intended InsForge project.
-3. Apply database migrations so `verification_receipts` exists before receipts are written.
+3. Apply database migrations so `verification_receipts` has the complete v2
+   identity columns and immutability trigger before receipts are written.
 4. Deploy `verify-event`, `get-receipt`, `helius-webhook`, and `inspect-transaction` from `functions/dist`.
 5. Configure Helius to send `X-EventSeal-Webhook-Secret` with the same secret stored in InsForge.
 
@@ -87,9 +88,9 @@ template, see [`docs/insforge-deploy-runbook.md`](../docs/insforge-deploy-runboo
 
 InsForge exposes deployed functions under `/functions/{slug}`:
 
-| Method | Route                            | Notes                                                                                    |
-| ------ | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| `POST` | `/functions/inspect-transaction` | JSON `{ signature, cluster }`; 4 KiB streamed body limit; read-only, no receipt.         |
-| `POST` | `/functions/verify-event`        | Body must match the SDK `VerifyEventInput` shape except `rpcUrl`, which is server-owned. |
-| `GET`  | `/functions/get-receipt`         | Requires `receiptId` as a query parameter.                                               |
-| `POST` | `/functions/helius-webhook`      | Requires `X-EventSeal-Webhook-Secret`; body is a Helius transactions array.              |
+| Method | Route                            | Notes                                                                                        |
+| ------ | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST` | `/functions/inspect-transaction` | JSON `{ signature, cluster }`; 4 KiB streamed body limit; read-only, no receipt.             |
+| `POST` | `/functions/verify-event`        | Body must match the SDK `VerifyEventInput` shape except `rpcUrl`, which is server-owned.     |
+| `GET`  | `/functions/get-receipt`         | Requires query parameter `receiptId`; returns only a self-consistent v1 or v2 stored record. |
+| `POST` | `/functions/helius-webhook`      | Requires `X-EventSeal-Webhook-Secret`; body is a Helius transactions array.                  |

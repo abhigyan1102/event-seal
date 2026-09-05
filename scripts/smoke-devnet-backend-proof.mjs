@@ -86,7 +86,7 @@ export async function runBackendProofSmoke(options, fetchFn = fetch) {
     success.receiptId,
     timeoutMs,
   );
-  assertReceipt(receipt, success);
+  assertReceipt(receipt, success, fixture);
 
   const failure = await invokeVerification(
     fetchFn,
@@ -244,6 +244,7 @@ function assertVerificationResult(label, result, options) {
     `${label} expectedProgramId`,
   );
   assertEqual(result.slot, transaction.slot, `${label} slot`);
+  assertEqual(result.commitment, "finalized", `${label} commitment`);
   assertEqual(result.verdict, expected.verdict, `${label} verdict`);
   assertEqual(result.reasonCode, expected.reasonCode, `${label} reasonCode`);
 
@@ -262,13 +263,18 @@ function assertVerificationResult(label, result, options) {
   }
 }
 
-function assertReceipt(receipt, verification) {
+function assertReceipt(receipt, verification, fixture) {
   if (!isRecord(receipt)) {
     throw new Error("Receipt lookup returned a non-object body");
   }
+  if (!isRecord(verification.event)) {
+    throw new Error("Verified response is missing attributed event evidence");
+  }
+  assertEqual(receipt.receipt_version, 2, "receipt_version");
   assertEqual(receipt.receipt_id, verification.receiptId, "receipt_id");
   assertEqual(receipt.signature, verification.signature, "receipt signature");
   assertEqual(receipt.cluster, verification.cluster, "receipt cluster");
+  assertEqual(receipt.commitment, "finalized", "receipt commitment");
   assertEqual(Number(receipt.slot), verification.slot, "receipt slot");
   assertEqual(receipt.verdict, verification.verdict, "receipt verdict");
   assertEqual(
@@ -276,11 +282,71 @@ function assertReceipt(receipt, verification) {
     verification.reasonCode,
     "receipt reason_code",
   );
+  assertEqual(receipt.reason, verification.reason, "receipt reason");
+  assertEqual(
+    receipt.expected_program_id,
+    verification.expectedProgramId,
+    "receipt expected_program_id",
+  );
+  assertEqual(
+    receipt.event_format,
+    fixture.event.format,
+    "receipt event_format",
+  );
+  assertEqual(
+    receipt.event_discriminator,
+    fixture.event.discriminator,
+    "receipt event_discriminator",
+  );
+  assertEqual(
+    receipt.emitter_program_id,
+    verification.event.emitterProgramId,
+    "receipt emitter_program_id",
+  );
+  assertEqual(
+    receipt.event_position,
+    verification.event.eventPosition,
+    "receipt event_position",
+  );
+  assertEqual(
+    receipt.event_data_hash,
+    verification.event.eventDataHash,
+    "receipt event_data_hash",
+  );
+  assertEvidence(receipt.evidence, verification.evidence);
+}
+
+function assertEvidence(actual, expected) {
+  if (!Array.isArray(actual) || !Array.isArray(expected)) {
+    throw new Error("receipt evidence must be arrays");
+  }
+  assertEqual(actual.length, expected.length, "receipt evidence length");
+  actual.forEach((item, index) => {
+    const expectedItem = expected[index];
+    if (!isRecord(item) || !isRecord(expectedItem)) {
+      throw new Error(`receipt evidence ${index} must be an object`);
+    }
+    assertEqual(
+      item.check,
+      expectedItem.check,
+      `receipt evidence ${index} check`,
+    );
+    assertEqual(
+      item.passed,
+      expectedItem.passed,
+      `receipt evidence ${index} passed`,
+    );
+    assertEqual(
+      item.detail,
+      expectedItem.detail,
+      `receipt evidence ${index} detail`,
+    );
+  });
 }
 
 function buildProof({ failure, fixture, receipt, sourceFixture, success }) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     checkedAt: new Date().toISOString(),
     cluster: fixture.cluster,
     programId: fixture.programId,
@@ -297,9 +363,14 @@ function buildProof({ failure, fixture, receipt, sourceFixture, success }) {
         reasonCode: success.reasonCode,
         receiptId: success.receiptId,
         receiptLookup: {
+          receiptVersion: receipt.receipt_version,
           receiptId: receipt.receipt_id,
           verdict: receipt.verdict,
           reasonCode: receipt.reason_code,
+          commitment: receipt.commitment,
+          expectedProgramId: receipt.expected_program_id,
+          eventFormat: receipt.event_format,
+          eventDiscriminator: receipt.event_discriminator,
         },
       },
       failure: {

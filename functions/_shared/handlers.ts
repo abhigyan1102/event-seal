@@ -17,6 +17,10 @@ import {
   validateWebhookConfiguration,
 } from "./validation.ts";
 import { readRpcEnvironment } from "./rpc-environment.ts";
+import {
+  isStoredVerificationReceipt,
+  STORED_RECEIPT_COLUMNS,
+} from "./stored-receipt.ts";
 
 type GetEnv = (name: string) => string | undefined;
 
@@ -174,7 +178,7 @@ export function createGetReceiptHandler({
       });
       const { data, error } = await client.database
         .from("verification_receipts")
-        .select("*")
+        .select(STORED_RECEIPT_COLUMNS)
         .eq("receipt_id", receiptId.value)
         .maybeSingle();
 
@@ -184,6 +188,12 @@ export function createGetReceiptHandler({
       }
       if (data === null || data === undefined)
         return errorResponse("Receipt not found", 404, responseHeaders);
+      if (!isStoredVerificationReceipt(data)) {
+        logger.error("EventSeal stored receipt validation failed", {
+          receiptId: receiptId.value,
+        });
+        return errorResponse("Receipt lookup failed", 500, responseHeaders);
+      }
       return jsonResponse(data, 200, responseHeaders);
     } catch (error) {
       logger.error("EventSeal receipt lookup failed", error);
