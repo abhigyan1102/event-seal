@@ -62,7 +62,9 @@ export default async function HistoryPage() {
         <ol className="history-list">
           {receipts.map((receipt) => (
             <li key={receipt.receiptId}>
-              <code>{receipt.receiptId}</code>
+              <Link href={`/receipts/${receipt.receiptId}`}>
+                <code>{receipt.receiptId}</code>
+              </Link>
               <time dateTime={receipt.savedAt}>
                 {new Intl.DateTimeFormat("en", {
                   dateStyle: "medium",
