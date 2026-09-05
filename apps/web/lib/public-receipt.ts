@@ -130,6 +130,21 @@ const REASON_CODES: readonly VerificationReasonCode[] = [
   "CPI_EVENT_UNSUPPORTED",
   "INVALID_REQUEST",
 ];
+const VERDICT_BY_REASON_CODE = {
+  VERIFIED: "verified",
+  TX_FAILED: "rejected",
+  TX_NOT_FOUND: "indeterminate",
+  TX_NOT_FINALIZED: "indeterminate",
+  RPC_UNAVAILABLE: "indeterminate",
+  METADATA_MISSING: "indeterminate",
+  LOGS_UNAVAILABLE: "indeterminate",
+  EVENT_NOT_FOUND: "indeterminate",
+  AMBIGUOUS_EVENT: "indeterminate",
+  PROGRAM_MISMATCH: "rejected",
+  DISCRIMINATOR_MISMATCH: "rejected",
+  CPI_EVENT_UNSUPPORTED: "indeterminate",
+  INVALID_REQUEST: "indeterminate",
+} as const satisfies Record<VerificationReasonCode, VerificationVerdict>;
 
 export async function loadPublicReceipt(
   receiptId: string,
@@ -169,6 +184,7 @@ export function isPublicReceipt(value: unknown): value is PublicReceipt {
     !isNullableNonNegativeInteger(value.slot) ||
     !isOneOf(value.verdict, VERDICTS) ||
     !isOneOf(value.reason_code, REASON_CODES) ||
+    VERDICT_BY_REASON_CODE[value.reason_code] !== value.verdict ||
     !isNonEmptyString(value.emitter_program_id) ||
     !isNonNegativeInteger(value.event_position) ||
     typeof value.event_data_hash !== "string" ||

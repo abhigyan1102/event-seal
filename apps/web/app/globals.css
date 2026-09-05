@@ -1868,6 +1868,10 @@ summary {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .receipt-evidence-accordion__item {
+    transition: none !important;
+  }
+
   .public-receipt__inline-image,
   .receipt-evidence-accordion__item,
   .public-receipt__actions > button,

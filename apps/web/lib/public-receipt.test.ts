@@ -133,6 +133,21 @@ describe("public receipt lookup", () => {
   });
 
   it.each([
+    { verdict: "verified", reason_code: "TX_FAILED" },
+    { verdict: "rejected", reason_code: "VERIFIED" },
+    { verdict: "indeterminate", reason_code: "PROGRAM_MISMATCH" },
+  ] as const)(
+    "fails closed for a $verdict/$reason_code receipt state mismatch",
+    async (state) => {
+      const receipt = { ...v2Receipt, ...state };
+      mocks.maybeSingle.mockResolvedValue({ data: receipt, error: null });
+      await expect(
+        loadPublicReceipt(receipt.receipt_id, mocks),
+      ).resolves.toEqual({ status: "unavailable" });
+    },
+  );
+
+  it.each([
     { ...v2Receipt, unexpected: "provider detail" },
     { ...v2Receipt, expected_program_id: "11111111111111111111111111111111" },
     { ...v2Receipt, event_discriminator: "ABCDEF0123456789" },
