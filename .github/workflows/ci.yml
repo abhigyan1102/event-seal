@@ -41,6 +41,20 @@ jobs:
       - name: Check receipt identity and immutability
         run: psql -X --host postgres --username postgres --dbname eventseal_test --file tests/database/receipt-identity-integrity.sql
 
+  web-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
   rust:
     runs-on: ubuntu-latest
     steps:

@@ -71,6 +71,31 @@ export default tseslint.config(
     },
   },
 
+  // Playwright release tests and their Node-hosted configuration.
+  {
+    files: ["playwright.config.ts", "tests/e2e/**/*.ts"],
+    extends: [...tseslint.configs.recommendedTypeChecked],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+      parserOptions: {
+        project: "./tsconfig.e2e.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
+      ],
+    },
+  },
+
   // React hooks rules for the web app
   {
     files: ["apps/web/**/*.tsx", "apps/web/**/*.ts"],
@@ -85,7 +110,11 @@ export default tseslint.config(
 
   // Next.js server entry points use Node globals.
   {
-    files: ["apps/web/app/api/**/*.ts", "apps/web/next.config.ts"],
+    files: [
+      "apps/web/app/api/**/*.ts",
+      "apps/web/next.config.ts",
+      "playwright.config.ts",
+    ],
     languageOptions: {
       globals: globals.node,
     },
