@@ -9,7 +9,8 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present && npm run build:functions",
+    "build": "npm run build:web && npm run build:functions",
+    "build:web": "npm run build --workspace @eventseal/web",
     "build:functions": "node scripts/build-functions.mjs",
     "fixtures:devnet": "node scripts/generate-devnet-fixtures.mjs",
     "prepare": "husky",
@@ -17,7 +18,9 @@
     "test": "npm run test --workspaces --if-present && npm run test:functions && npm run test:scripts",
     "test:functions": "vitest run functions/_shared/*.test.ts",
     "test:scripts": "vitest run scripts/*.test.mjs",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:e2e": "playwright test",
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run typecheck:e2e",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit --pretty false",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -42,7 +45,9 @@
     "nanoid": "^3.3.18"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "9.31.0",
+    "@playwright/test": "1.63.0",
     "@solana/kit": "8.0.0",
     "@solana/kit-plugin-rpc": "0.18.0",
     "@solana/kit-plugin-signer": "0.18.0",

@@ -212,10 +212,17 @@ Before release, verify a real issued receipt can be saved, remains in **Saved re
 | ------------------------- | ----------------------------------------------------------- |
 | `npm run dev`             | Build the local SDK and start the web application.          |
 | `npm run test`            | Run SDK unit tests.                                         |
+| `npm run test:e2e`        | Run Chromium release flows and axe accessibility checks.    |
 | `npm run typecheck`       | Type-check all TypeScript workspaces.                       |
+| `npm run build:web`       | Build the SDK first, then the production Next.js app.       |
 | `npm run build`           | Build the SDK, web application, and bundled edge functions. |
 | `npm run check`           | Run type-checking, tests, and production builds.            |
 | `cargo check --workspace` | Compile-check the Anchor demonstration program.             |
+
+Install the browser once with `npx playwright install chromium`. The E2E suite
+starts the production Next.js server itself and mocks browser-facing inspection
+and verification responses; live RPC and OAuth checks remain explicit release
+smokes.
 
 ## Hosted functions
 

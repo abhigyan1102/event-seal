@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "npm run build --workspace @eventseal/sdk && npm run build:next",
+    "build:next": "next build",
     "dev": "next dev",
     "start": "next start",
     "test": "vitest run",
