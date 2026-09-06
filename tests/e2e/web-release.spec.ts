@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import type { BrowserVerifyEventInput } from "../../apps/web/lib/verification-request";
+
 const signature = "1".repeat(64);
 const expectedProgramId = "1".repeat(32);
 const discriminator = "0102030405060708";
@@ -222,11 +224,17 @@ async function mockBrowserApis(page: Page, fixture: VerdictFixture) {
   });
 
   await page.route("**/api/verify", async (route) => {
-    const request = route.request().postDataJSON() as {
-      signature: string;
-      cluster: "devnet";
-      expectedProgramId: string;
-    };
+    const request = route.request().postDataJSON() as BrowserVerifyEventInput;
+    expect(request).toMatchObject({
+      signature,
+      cluster: "devnet",
+      expectedProgramId,
+      event: {
+        format: "anchor-log",
+        discriminator,
+      },
+      commitment: "finalized",
+    });
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
