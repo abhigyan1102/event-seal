@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import type { BrowserInspectTransactionInput } from "../../apps/web/lib/inspection-request";
 import type { BrowserVerifyEventInput } from "../../apps/web/lib/verification-request";
 
 const signature = "1".repeat(64);
@@ -202,10 +203,13 @@ async function verifyTrustedIdentity(page: Page) {
 
 async function mockBrowserApis(page: Page, fixture: VerdictFixture) {
   await page.route("**/api/inspect", async (route) => {
-    const request = route.request().postDataJSON() as {
-      signature: string;
-      cluster: "devnet";
-    };
+    const request = route
+      .request()
+      .postDataJSON() as BrowserInspectTransactionInput;
+    expect(request).toMatchObject({
+      signature,
+      cluster: "devnet",
+    });
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
