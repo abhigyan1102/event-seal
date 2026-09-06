@@ -13,11 +13,14 @@ const inspection = await inspectTransaction({
 });
 ```
 
-The hosted equivalent is `POST /functions/inspect-transaction` with JSON
-`{ "signature": "...", "cluster": "mainnet-beta" }`. The handler rejects extra
-fields, including caller-supplied RPC URLs. It bounds the streamed request to
-4 KiB and returns `Cache-Control: no-store`. It has no database or receipt-writing
-dependency. Browser integration is a separate change.
+The public browser endpoint is `POST /api/inspect` with JSON
+`{ "signature": "...", "cluster": "mainnet-beta" }`. That Next.js route calls
+the hosted `POST /functions/inspect-transaction` function with the server-only
+`X-EventSeal-Internal-Secret` credential. Direct function calls without the
+matching credential fail before body parsing or RPC access. Both layers reject
+extra fields, including caller-supplied RPC URLs. The function bounds the
+streamed request to 4 KiB, returns `Cache-Control: no-store`, and has no database
+or receipt-writing dependency.
 
 ## Result contract
 

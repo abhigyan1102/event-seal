@@ -8,6 +8,7 @@ import {
   jsonResponse,
   optionsResponse,
 } from "./http.ts";
+import { authenticateInternalRequest } from "./internal-auth.ts";
 import { readRpcEnvironment } from "./rpc-environment.ts";
 import {
   applyServerRpcUrl,
@@ -31,6 +32,16 @@ export function createInspectTransactionHandler(dependencies: {
     if (request.method === "OPTIONS") return optionsResponse(headers);
     if (request.method !== "POST")
       return errorResponse("Method not allowed", 405, headers);
+    const authentication = await authenticateInternalRequest(
+      request,
+      dependencies.getEnv,
+    );
+    if (!authentication.ok)
+      return errorResponse(
+        authentication.error,
+        authentication.status,
+        headers,
+      );
     if (
       request.headers
         .get("content-type")

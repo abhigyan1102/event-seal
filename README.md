@@ -182,7 +182,15 @@ npm run check
 npm run dev
 ```
 
-Next.js serves the verifier at `http://localhost:3000/verify`. In the local, uncommitted `apps/web/.env.local`, set `INSFORGE_BASE_URL` and `INSFORGE_ANON_KEY` to the same InsForge environment. Set `EVENTSEAL_APP_URL=http://localhost:3000` for local OAuth callbacks. Restart the dev server after changing these values. The interface loads without backend credentials, but verification and sign-in require valid configuration. Keep administrative keys and RPC credentials in the backend function environment; the web app only needs the URL, anon key, and app origin.
+Next.js serves the verifier at `http://localhost:3000/verify`. In the local,
+uncommitted `apps/web/.env.local`, set `INSFORGE_BASE_URL` and
+`INSFORGE_ANON_KEY` to the same InsForge environment. Set
+`EVENTSEAL_APP_URL=http://localhost:3000` for local OAuth callbacks and set
+`EVENTSEAL_INTERNAL_API_SECRET` to the same value configured on the protected
+`verify-event` and `inspect-transaction` functions. Restart the development
+server after changing these values. The interface loads without backend
+credentials, but verification and sign-in require valid configuration. Keep
+administrative keys, internal credentials, and RPC credentials server-side.
 
 ### Verification workspace
 
@@ -235,15 +243,23 @@ npx @insforge/cli db migrations up --all
 npx @insforge/cli functions deploy verify-event --file functions/dist/verify-event.js
 npx @insforge/cli functions deploy get-receipt --file functions/dist/get-receipt.js
 npx @insforge/cli functions deploy helius-webhook --file functions/dist/helius-webhook.js
+npx @insforge/cli functions deploy inspect-transaction --file functions/dist/inspect-transaction.js
 ```
 
 The deployed functions are invoked through InsForge function slugs:
 
-| Function         | Method | Purpose                                                                 |
-| ---------------- | ------ | ----------------------------------------------------------------------- |
-| `verify-event`   | `POST` | Verify one transaction event and persist any deterministic receipt.     |
-| `get-receipt`    | `GET`  | Retrieve a receipt using the `receiptId` query parameter.               |
-| `helius-webhook` | `POST` | Deduplicate Helius signatures, verify them, and persist their receipts. |
+| Function              | Method | Purpose                                                                      |
+| --------------------- | ------ | ---------------------------------------------------------------------------- |
+| `inspect-transaction` | `POST` | Authenticated server-side inspection; read-only and creates no receipt.      |
+| `verify-event`        | `POST` | Authenticated verification that persists any deterministic verified receipt. |
+| `get-receipt`         | `GET`  | Retrieve a receipt using the `receiptId` query parameter.                    |
+| `helius-webhook`      | `POST` | Deduplicate Helius signatures, verify them, and persist their receipts.      |
+
+Browser clients never call the protected InsForge functions directly. They call
+the same-origin `/api/inspect` and `/api/verify` routes, which validate the
+public request and attach `EVENTSEAL_INTERNAL_API_SECRET` server-side. Missing
+or incorrect function credentials are rejected before request-body parsing or
+RPC access.
 
 See [`functions/README.md`](./functions/README.md) for environment variables
 and [`docs/insforge-deploy-runbook.md`](./docs/insforge-deploy-runbook.md) for

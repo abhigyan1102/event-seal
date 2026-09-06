@@ -28,6 +28,8 @@ changes from their local terminal.
 - Access to the intended InsForge project.
 - Optional per-network Solana RPC endpoints. Otherwise the SDK uses the selected
   cluster's public endpoint.
+- A generated internal API secret shared only by the Next.js server,
+  `verify-event`, and `inspect-transaction`.
 - A generated webhook secret for Helius. Use a random secret; do not reuse an
   API key.
 
@@ -54,19 +56,20 @@ that should avoid public cluster RPC defaults. Migrate an existing `SOLANA_RPC_U
 to the appropriate network-specific key before deploying, or add the explicit
 `SOLANA_RPC_CLUSTER` binding. An unbound legacy URL fails closed.
 
-| Name                                    | Used by                                                 | Notes                                                                          |
-| --------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `INSFORGE_BASE_URL`                     | `verify-event`, `get-receipt`, `helius-webhook`         | Required server-side project URL.                                              |
-| `INSFORGE_API_KEY`                      | `verify-event`, `get-receipt`, `helius-webhook`         | Required server-only administrative key for receipt persistence.               |
-| `SOLANA_RPC_MAINNET_URL`                | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional mainnet-beta RPC only.                                                |
-| `SOLANA_RPC_DEVNET_URL`                 | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional devnet RPC only.                                                      |
-| `SOLANA_RPC_TESTNET_URL`                | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional testnet RPC only.                                                     |
-| `SOLANA_RPC_URL` + `SOLANA_RPC_CLUSTER` | Same three functions                                    | Legacy pair: used only for the named cluster if no specific URL is configured. |
-| `EVENTSEAL_CLUSTER`                     | `helius-webhook`                                        | Required `mainnet-beta`, `devnet`, or `testnet`; devnet is the current target. |
-| `EVENTSEAL_EXPECTED_PROGRAM_ID`         | `helius-webhook`                                        | Required program expected to emit the verified event.                          |
-| `EVENTSEAL_EVENT_FORMAT`                | `helius-webhook`                                        | Required `anchor-log` for hosted webhook receipt deployment.                   |
-| `EVENTSEAL_EVENT_DISCRIMINATOR`         | `helius-webhook`                                        | Required sixteen lowercase hex characters.                                     |
-| `EVENTSEAL_WEBHOOK_SECRET`              | `helius-webhook`                                        | Required shared secret in `X-EventSeal-Webhook-Secret`.                        |
+| Name                                    | Used by                                                 | Notes                                                                             |
+| --------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `EVENTSEAL_INTERNAL_API_SECRET`         | Next.js, `inspect-transaction`, `verify-event`          | Required server-only credential; use the same value on both deployment platforms. |
+| `INSFORGE_BASE_URL`                     | `verify-event`, `get-receipt`, `helius-webhook`         | Required server-side project URL.                                                 |
+| `INSFORGE_API_KEY`                      | `verify-event`, `get-receipt`, `helius-webhook`         | Required server-only administrative key for receipt persistence.                  |
+| `SOLANA_RPC_MAINNET_URL`                | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional mainnet-beta RPC only.                                                   |
+| `SOLANA_RPC_DEVNET_URL`                 | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional devnet RPC only.                                                         |
+| `SOLANA_RPC_TESTNET_URL`                | `inspect-transaction`, `verify-event`, `helius-webhook` | Optional testnet RPC only.                                                        |
+| `SOLANA_RPC_URL` + `SOLANA_RPC_CLUSTER` | Same three functions                                    | Legacy pair: used only for the named cluster if no specific URL is configured.    |
+| `EVENTSEAL_CLUSTER`                     | `helius-webhook`                                        | Required `mainnet-beta`, `devnet`, or `testnet`; devnet is the current target.    |
+| `EVENTSEAL_EXPECTED_PROGRAM_ID`         | `helius-webhook`                                        | Required program expected to emit the verified event.                             |
+| `EVENTSEAL_EVENT_FORMAT`                | `helius-webhook`                                        | Required `anchor-log` for hosted webhook receipt deployment.                      |
+| `EVENTSEAL_EVENT_DISCRIMINATOR`         | `helius-webhook`                                        | Required sixteen lowercase hex characters.                                        |
+| `EVENTSEAL_WEBHOOK_SECRET`              | `helius-webhook`                                        | Required shared secret in `X-EventSeal-Webhook-Secret`.                           |
 
 Anchor CPI events are intentionally not listed as a deployable webhook receipt
 format yet. The current verifier fails closed for `anchor-cpi` with
@@ -85,6 +88,7 @@ values into a PR, issue, chat, or screenshot:
 ```bash
 npx @insforge/cli secrets add INSFORGE_BASE_URL <project-url>
 npx @insforge/cli secrets add INSFORGE_API_KEY <server-api-key>
+npx @insforge/cli secrets add EVENTSEAL_INTERNAL_API_SECRET <random-internal-api-secret>
 npx @insforge/cli secrets add EVENTSEAL_CLUSTER devnet
 npx @insforge/cli secrets add EVENTSEAL_EXPECTED_PROGRAM_ID <program-id>
 npx @insforge/cli secrets add EVENTSEAL_EVENT_FORMAT anchor-log
@@ -106,6 +110,7 @@ For secret rotation or existing keys, update values explicitly:
 ```bash
 npx @insforge/cli secrets update INSFORGE_BASE_URL --value <project-url>
 npx @insforge/cli secrets update INSFORGE_API_KEY --value <server-api-key>
+npx @insforge/cli secrets update EVENTSEAL_INTERNAL_API_SECRET --value <random-internal-api-secret>
 npx @insforge/cli secrets update SOLANA_RPC_DEVNET_URL --value <devnet-rpc-url>
 npx @insforge/cli secrets update SOLANA_RPC_MAINNET_URL --value <mainnet-rpc-url>
 npx @insforge/cli secrets update SOLANA_RPC_TESTNET_URL --value <testnet-rpc-url>
@@ -214,6 +219,15 @@ npx @insforge/cli functions list
 ## Smoke checks
 
 Run smoke checks with non-secret sample data. Replace placeholders locally.
+Load `EVENTSEAL_INTERNAL_API_SECRET` into the shell environment without printing
+it, then fail closed if it is missing:
+
+```bash
+test -n "${EVENTSEAL_INTERNAL_API_SECRET:-}" || {
+  echo "EVENTSEAL_INTERNAL_API_SECRET is required" >&2
+  exit 1
+}
+```
 
 Define assertion helpers once per smoke-check session:
 
@@ -256,10 +270,19 @@ assert_status 204 "$CORS_BODY" \
 Verify request validation without touching Solana RPC:
 
 ```bash
+AUTH_BODY=$(mktemp)
+assert_status 401 "$AUTH_BODY" \
+  -X POST "<INSFORGE_BASE_URL>/functions/verify-event" \
+  -H "Content-Type: application/json" \
+  -d '{'
+
+assert_json_field "$AUTH_BODY" error Unauthorized
+
 VALIDATION_BODY=$(mktemp)
 assert_status 400 "$VALIDATION_BODY" \
   -X POST "<INSFORGE_BASE_URL>/functions/verify-event" \
   -H "Content-Type: application/json" \
+  -H "X-EventSeal-Internal-Secret: ${EVENTSEAL_INTERNAL_API_SECRET}" \
   -d '{}'
 
 assert_json_field "$VALIDATION_BODY" error "signature must be a non-empty string"
@@ -269,6 +292,19 @@ Expected validation response:
 
 ```json
 { "error": "signature must be a non-empty string" }
+```
+
+The malformed unauthenticated body must return `401`, proving authentication
+runs before JSON parsing. Repeat that boundary check for inspection:
+
+```bash
+INSPECT_AUTH_BODY=$(mktemp)
+assert_status 401 "$INSPECT_AUTH_BODY" \
+  -X POST "<INSFORGE_BASE_URL>/functions/inspect-transaction" \
+  -H "Content-Type: application/json" \
+  -d '{'
+
+assert_json_field "$INSPECT_AUTH_BODY" error Unauthorized
 ```
 
 Check receipt lookup validation:
@@ -313,6 +349,7 @@ VERIFY_BODY=$(mktemp)
 assert_status 200 "$VERIFY_BODY" \
   -X POST "<INSFORGE_BASE_URL>/functions/verify-event" \
   -H "Content-Type: application/json" \
+  -H "X-EventSeal-Internal-Secret: ${EVENTSEAL_INTERNAL_API_SECRET}" \
   -d '{
     "signature": "<finalized-devnet-signature>",
     "cluster": "devnet",
@@ -354,6 +391,27 @@ Acceptance target for a known-good fixture:
 The first response must include `verdict: "verified"` and a deterministic
 `receiptId`. The follow-up `get-receipt` response must return the stored receipt
 row for that same `receiptId`.
+
+The automated form of this proof also reads the internal secret exclusively
+from the environment and does not include it in output:
+
+```bash
+INSFORGE_BASE_URL="<INSFORGE_BASE_URL>" npm run smoke:devnet-backend
+```
+
+## Vercel rate limit release gate
+
+After the production Vercel project exists, configure one WAF rule that matches
+either `/api/inspect` or `/api/verify`. Use a fixed window keyed by IP with a
+combined limit of 20 requests per 60 seconds and the default `429` action.
+Before publishing, review the current rate-limiting price shown by Vercel; do
+not assume the included quota or price is unchanged.
+
+Publish the rule only after reviewing its match expression, then send 21 test
+requests from one IP. Requests 1-20 must reach the application and request 21
+must return `429`. Vercel tracks counters per region, so execute this smoke from
+one stable client location. Record only the outcome, never request headers or
+environment values.
 
 ## Helius configuration
 

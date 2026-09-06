@@ -88,6 +88,21 @@ test("redirects home to the verifier and supports keyboard navigation", async ({
   await expectNoAxeViolations(page);
 });
 
+test("serves security headers on pages and API responses", async ({
+  page,
+  request,
+}) => {
+  const pageResponse = await page.goto("/verify");
+  expectSecurityHeaders(pageResponse);
+
+  const apiResponse = await request.post("/api/inspect", {
+    data: "{}",
+    headers: { "Content-Type": "text/plain" },
+  });
+  expect(apiResponse.status()).toBe(415);
+  expectSecurityHeaders(apiResponse);
+});
+
 test("keeps inspection separate from verification", async ({ page }) => {
   await mockBrowserApis(page, verdictFixtures[0]);
   await page.goto("/verify");
@@ -295,4 +310,25 @@ async function expectNoAxeViolations(page: Page) {
       .map((violation) => `${violation.id}: ${violation.help}`)
       .join("\n"),
   ).toEqual([]);
+}
+
+function expectSecurityHeaders(
+  response: { headers(): Record<string, string> } | null,
+) {
+  expect(response).not.toBeNull();
+  const headers = response?.headers() ?? {};
+  const policy = headers["content-security-policy"];
+
+  expect(policy).toContain("default-src 'self'");
+  expect(policy).toContain("frame-ancestors 'none'");
+  expect(policy).toContain("object-src 'none'");
+  expect(policy).not.toContain("'unsafe-eval'");
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(headers["permissions-policy"]).toContain("camera=()");
+  expect(headers["strict-transport-security"]).toBe(
+    "max-age=63072000; includeSubDomains; preload",
+  );
+  expect(headers["x-powered-by"]).toBeUndefined();
 }

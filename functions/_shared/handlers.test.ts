@@ -6,6 +6,9 @@ import {
   createHeliusWebhookHandler,
   createVerifyEventHandler,
 } from "./handlers.ts";
+import { INTERNAL_API_SECRET_HEADER } from "./internal-auth.ts";
+
+const internalApiSecret = "test-internal-api-secret";
 
 const validVerifyInput = {
   signature: "5UfDuXexampleSignature",
@@ -29,7 +32,11 @@ const verificationResult = {
 };
 
 function getEnv(values: Record<string, string | undefined>) {
-  return (name: string) => values[name];
+  const environment = {
+    EVENTSEAL_INTERNAL_API_SECRET: internalApiSecret,
+    ...values,
+  };
+  return (name: string) => environment[name];
 }
 
 function logger() {
@@ -39,7 +46,11 @@ function logger() {
 function jsonRequest(body: unknown, headers: HeadersInit = {}) {
   return new Request("https://eventseal.test/functions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      [INTERNAL_API_SECRET_HEADER]: internalApiSecret,
+      ...headers,
+    },
     body: JSON.stringify(body),
   });
 }
@@ -64,6 +75,51 @@ describe("createVerifyEventHandler", () => {
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
       "POST, OPTIONS",
     );
+  });
+
+  it("rejects missing or incorrect credentials before parsing the body", async () => {
+    const verifyAndPersist = vi.fn();
+    const handler = createVerifyEventHandler({
+      getEnv: getEnv({}),
+      logger: logger(),
+      verifyAndPersist,
+    });
+
+    for (const suppliedSecret of [undefined, "incorrect-secret"]) {
+      const response = await handler(
+        new Request("https://eventseal.test/functions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(suppliedSecret
+              ? { [INTERNAL_API_SECRET_HEADER]: suppliedSecret }
+              : {}),
+          },
+          body: "{",
+        }),
+      );
+
+      expect(response.status).toBe(401);
+      expect(await jsonBody(response)).toEqual({ error: "Unauthorized" });
+    }
+    expect(verifyAndPersist).not.toHaveBeenCalled();
+  });
+
+  it("fails before parsing when internal authentication is not configured", async () => {
+    const verifyAndPersist = vi.fn();
+    const handler = createVerifyEventHandler({
+      getEnv: getEnv({ EVENTSEAL_INTERNAL_API_SECRET: undefined }),
+      logger: logger(),
+      verifyAndPersist,
+    });
+
+    const response = await handler(jsonRequest("not parsed"));
+
+    expect(response.status).toBe(500);
+    expect(await jsonBody(response)).toEqual({
+      error: "Internal authentication is not configured",
+    });
+    expect(verifyAndPersist).not.toHaveBeenCalled();
   });
 
   it("verifies valid requests with the server-owned RPC URL", async () => {

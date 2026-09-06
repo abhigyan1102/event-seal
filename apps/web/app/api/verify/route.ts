@@ -8,13 +8,18 @@ import {
   VerificationAdapterError,
 } from "../../../lib/verify-route";
 import { parseServiceUrl } from "../../../lib/auth-config-values";
+import { createProtectedFunctionInvokeOptions } from "../../../lib/internal-function-auth";
 
 export const runtime = "nodejs";
 
 const handlePost = createVerifyRoute(async (input) => {
   const anonKey = process.env.INSFORGE_ANON_KEY?.trim();
+  const invokeOptions = createProtectedFunctionInvokeOptions(
+    input,
+    process.env.EVENTSEAL_INTERNAL_API_SECRET,
+  );
 
-  if (!anonKey) {
+  if (!anonKey || !invokeOptions) {
     throw new VerificationAdapterError("NOT_CONFIGURED");
   }
 
@@ -31,7 +36,7 @@ const handlePost = createVerifyRoute(async (input) => {
   const client = createClient({ baseUrl, anonKey });
   const { data, error } = await client.functions.invoke<VerificationResult>(
     "verify-event",
-    { body: input },
+    invokeOptions,
   );
 
   if (error || !data) {

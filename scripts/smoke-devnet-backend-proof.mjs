@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 const DEFAULT_FIXTURE = "tests/fixtures/devnet-demo.json";
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 const EXTERNAL_FIXTURE_SOURCE = "[external fixture path redacted]";
+const INTERNAL_API_SECRET_HEADER = "X-EventSeal-Internal-Secret";
 const RECEIPT_ID_PATTERN = /^es_[0-9a-f]{64}$/;
 const EXPECTED_TRANSACTIONS = Object.freeze({
   success: {
@@ -18,7 +19,7 @@ const EXPECTED_TRANSACTIONS = Object.freeze({
   },
 });
 
-export function parseCliArgs(argv) {
+export function parseCliArgs(argv, env = process.env) {
   const { values } = parseArgs({
     args: argv,
     strict: true,
@@ -33,12 +34,13 @@ export function parseCliArgs(argv) {
 
   return {
     help: values.help ?? false,
-    baseUrl: values["base-url"] ?? process.env.INSFORGE_BASE_URL,
+    baseUrl: values["base-url"] ?? env.INSFORGE_BASE_URL,
     fixture: resolve(values.fixture ?? DEFAULT_FIXTURE),
     output: values.output === undefined ? undefined : resolve(values.output),
     timeoutMs: parseTimeoutMs(
       values["timeout-ms"] ?? `${DEFAULT_REQUEST_TIMEOUT_MS}`,
     ),
+    internalApiSecret: env.EVENTSEAL_INTERNAL_API_SECRET,
   };
 }
 
@@ -57,6 +59,9 @@ export function buildVerifyInput(fixture, transaction) {
 
 export async function runBackendProofSmoke(options, fetchFn = fetch) {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
+  const internalApiSecret = normalizeInternalApiSecret(
+    options.internalApiSecret,
+  );
   const fixturePath = resolve(options.fixture);
   const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const fixture = await readFixture(fixturePath);
@@ -71,6 +76,7 @@ export async function runBackendProofSmoke(options, fetchFn = fetch) {
     baseUrl,
     buildVerifyInput(fixture, successFixture),
     timeoutMs,
+    internalApiSecret,
   );
 
   assertVerificationResult("success transaction", success, {
@@ -93,6 +99,7 @@ export async function runBackendProofSmoke(options, fetchFn = fetch) {
     baseUrl,
     buildVerifyInput(fixture, failureFixture),
     timeoutMs,
+    internalApiSecret,
   );
 
   assertVerificationResult("failed transaction", failure, {
@@ -120,6 +127,15 @@ function normalizeBaseUrl(value) {
     throw new Error("Set INSFORGE_BASE_URL or pass --base-url.");
   }
   return value.replace(/\/+$/, "");
+}
+
+function normalizeInternalApiSecret(value) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(
+      "Set EVENTSEAL_INTERNAL_API_SECRET before running the smoke.",
+    );
+  }
+  return value;
 }
 
 function parseTimeoutMs(raw) {
@@ -195,10 +211,19 @@ function validateTransactionFixture(transaction, label, expected) {
   );
 }
 
-async function invokeVerification(fetchFn, baseUrl, input, timeoutMs) {
+async function invokeVerification(
+  fetchFn,
+  baseUrl,
+  input,
+  timeoutMs,
+  internalApiSecret,
+) {
   return await requestJson(fetchFn, `${baseUrl}/functions/verify-event`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      [INTERNAL_API_SECRET_HEADER]: internalApiSecret,
+    },
     body: JSON.stringify(input),
     signal: AbortSignal.timeout(timeoutMs),
   });
@@ -425,7 +450,9 @@ Options:
 
 The command invokes verify-event, fetches the stored receipt with get-receipt,
 and verifies the failed transaction is rejected without producing a receipt.
-It never reads or writes wallet keypairs, admin API keys, RPC URLs, or secrets.`);
+It reads EVENTSEAL_INTERNAL_API_SECRET from the environment for authenticated
+function calls and never prints or writes that value. It never reads or writes
+wallet keypairs, admin API keys, or RPC URLs.`);
 }
 
 async function main() {

@@ -1,14 +1,30 @@
 import { describe, expect, it, vi } from "vitest";
 import { createInspectTransactionHandler } from "./inspect-handler.ts";
 import { inspectTransaction } from "../../packages/sdk/src/index.ts";
+import { INTERNAL_API_SECRET_HEADER } from "./internal-auth.ts";
 
 const input = { signature: "1".repeat(64), cluster: "mainnet-beta" };
-const request = (body: unknown = input, type = "application/json") =>
+const internalApiSecret = "test-internal-api-secret";
+const request = (
+  body: unknown = input,
+  type = "application/json",
+  suppliedSecret: string | undefined = internalApiSecret,
+) =>
   new Request("https://app.test", {
     method: "POST",
-    headers: { "Content-Type": type },
+    headers: {
+      "Content-Type": type,
+      ...(suppliedSecret
+        ? { [INTERNAL_API_SECRET_HEADER]: suppliedSecret }
+        : {}),
+    },
     body: JSON.stringify(body),
   });
+
+const authenticatedEnv =
+  (getEnv: (name: string) => string | undefined = () => undefined) =>
+  (name: string): string | undefined =>
+    name === "EVENTSEAL_INTERNAL_API_SECRET" ? internalApiSecret : getEnv(name);
 const response = {
   kind: "transaction-inspection",
   ...input,
@@ -24,10 +40,11 @@ describe("inspection handler", () => {
   it("accepts signature and cluster with no verification or storage dependency", async () => {
     const inspect = vi.fn().mockResolvedValue(response);
     const handler = createInspectTransactionHandler({
-      getEnv: (name) =>
+      getEnv: authenticatedEnv((name) =>
         name === "SOLANA_RPC_MAINNET_URL"
           ? "https://mainnet.example"
           : undefined,
+      ),
       inspectTransaction: inspect,
     });
     const result = await handler(
@@ -46,6 +63,46 @@ describe("inspection handler", () => {
     ).toBe(204);
     expect((await handler(new Request("https://app.test"))).status).toBe(405);
   });
+  it("rejects missing or incorrect credentials before parsing or RPC", async () => {
+    const inspect = vi.fn();
+    const handler = createInspectTransactionHandler({
+      getEnv: authenticatedEnv(),
+      inspectTransaction: inspect,
+    });
+
+    for (const suppliedSecret of [undefined, "incorrect-secret"]) {
+      const result = await handler(
+        new Request("https://app.test", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(suppliedSecret
+              ? { [INTERNAL_API_SECRET_HEADER]: suppliedSecret }
+              : {}),
+          },
+          body: "{",
+        }),
+      );
+      expect(result.status).toBe(401);
+      await expect(result.json()).resolves.toEqual({ error: "Unauthorized" });
+    }
+    expect(inspect).not.toHaveBeenCalled();
+  });
+  it("fails before parsing when internal authentication is not configured", async () => {
+    const inspect = vi.fn();
+    const handler = createInspectTransactionHandler({
+      getEnv: () => undefined,
+      inspectTransaction: inspect,
+    });
+
+    const result = await handler(request("not parsed"));
+
+    expect(result.status).toBe(500);
+    await expect(result.json()).resolves.toEqual({
+      error: "Internal authentication is not configured",
+    });
+    expect(inspect).not.toHaveBeenCalled();
+  });
   it.each([
     {},
     null,
@@ -57,7 +114,7 @@ describe("inspection handler", () => {
   ])("rejects invalid or expanded input %j", async (body) => {
     const inspect = vi.fn();
     const handler = createInspectTransactionHandler({
-      getEnv: () => undefined,
+      getEnv: authenticatedEnv(),
       inspectTransaction: inspect,
     });
     expect((await handler(request(body))).status).toBe(400);
@@ -68,7 +125,7 @@ describe("inspection handler", () => {
       .fn()
       .mockRejectedValue(new Error("private RPC credential"));
     const handler = createInspectTransactionHandler({
-      getEnv: () => undefined,
+      getEnv: authenticatedEnv(),
       inspectTransaction: inspect,
     });
     expect((await handler(request(input, "application/jsonp"))).status).toBe(
@@ -78,8 +135,9 @@ describe("inspection handler", () => {
     expect(result.status).toBe(502);
     expect(await result.json()).toEqual({ error: "Inspection failed" });
     const unbound = createInspectTransactionHandler({
-      getEnv: (name) =>
+      getEnv: authenticatedEnv((name) =>
         name === "SOLANA_RPC_URL" ? "https://devnet.example" : undefined,
+      ),
       inspectTransaction: inspect,
     });
     expect((await unbound(request())).status).toBe(500);
@@ -90,7 +148,7 @@ describe("inspection handler", () => {
       const cancel = vi.fn();
       const inspect = vi.fn();
       const handler = createInspectTransactionHandler({
-        getEnv: () => undefined,
+        getEnv: authenticatedEnv(),
         inspectTransaction: inspect,
       });
       const body = new ReadableStream({
@@ -103,6 +161,7 @@ describe("inspection handler", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          [INTERNAL_API_SECRET_HEADER]: internalApiSecret,
           ...(length ? { "Content-Length": length } : {}),
         },
         body,
@@ -135,7 +194,7 @@ describe("inspection handler", () => {
       });
     try {
       const handler = createInspectTransactionHandler({
-        getEnv: () => undefined,
+        getEnv: authenticatedEnv(),
         inspectTransaction,
       });
       expect(await (await handler(request())).json()).toEqual({
