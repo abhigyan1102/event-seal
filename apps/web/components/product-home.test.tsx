@@ -28,9 +28,6 @@ describe("ProductHome", () => {
     const html = renderToStaticMarkup(<ProductHome />);
 
     expect(html).toContain('href="/verify"');
-    expect(html).toContain(
-      'href="https://github.com/abhigyan1102/event-seal/tree/main/docs"',
-    );
-    expect(html).not.toContain('href="/docs"');
+    expect(html).toContain('href="/docs"');
   });
 });

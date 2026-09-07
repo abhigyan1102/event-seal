@@ -34,6 +34,7 @@ export default async function RootLayout({
               EventSeal
             </Link>
             <ActiveNavLink href="/verify">Verify</ActiveNavLink>
+            <ActiveNavLink href="/docs">Docs</ActiveNavLink>
             <a
               className="nav-link nav-link--external"
               href="https://github.com/abhigyan1102/event-seal"
@@ -50,13 +51,16 @@ export default async function RootLayout({
         <footer className="site-footer">
           <div className="site-footer__inner">
             <strong>EventSeal</strong>
-            <a
-              href="https://github.com/abhigyan1102/event-seal"
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub <span aria-hidden="true">↗</span>
-            </a>
+            <div className="site-footer__links">
+              <Link href="/docs">Docs</Link>
+              <a
+                href="https://github.com/abhigyan1102/event-seal"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub <span aria-hidden="true">↗</span>
+              </a>
+            </div>
           </div>
         </footer>
       </body>
