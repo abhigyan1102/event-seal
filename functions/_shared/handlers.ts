@@ -10,6 +10,10 @@ import {
   optionsResponse,
 } from "./http.ts";
 import {
+  authenticateInternalRequest,
+  timingSafeSecretEqual,
+} from "./internal-auth.ts";
+import {
   applyServerRpcUrl,
   validateHeliusPayload,
   validateReceiptId,
@@ -26,7 +30,6 @@ type GetEnv = (name: string) => string | undefined;
 
 const HELIUS_WEBHOOK_MAX_SIGNATURES = 25;
 const HELIUS_WEBHOOK_VERIFY_CONCURRENCY = 4;
-const WEBHOOK_SECRET_ENCODER = new TextEncoder();
 
 interface Logger {
   error(message: string, ...details: unknown[]): void;
@@ -100,6 +103,15 @@ export function createVerifyEventHandler({
     }
     if (request.method !== "POST") {
       return errorResponse("Method not allowed", 405, responseHeaders);
+    }
+
+    const authentication = await authenticateInternalRequest(request, getEnv);
+    if (!authentication.ok) {
+      return errorResponse(
+        authentication.error,
+        authentication.status,
+        responseHeaders,
+      );
     }
 
     let input: VerifyEventInput;
@@ -229,10 +241,10 @@ export function createHeliusWebhookHandler({
       );
     }
     if (
-      !timingSafeEqual(
+      !(await timingSafeSecretEqual(
         request.headers.get("X-EventSeal-Webhook-Secret") ?? "",
         webhookSecret,
-      )
+      ))
     ) {
       return errorResponse("Unauthorized", 401, responseHeaders);
     }
@@ -317,19 +329,6 @@ function readHeliusConfiguration(
   }
 
   return configuration.value;
-}
-
-function timingSafeEqual(left: string, right: string): boolean {
-  const leftBytes = WEBHOOK_SECRET_ENCODER.encode(left);
-  const rightBytes = WEBHOOK_SECRET_ENCODER.encode(right);
-  const length = Math.max(leftBytes.length, rightBytes.length);
-  let difference = leftBytes.length ^ rightBytes.length;
-
-  for (let index = 0; index < length; index += 1) {
-    difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
-  }
-
-  return difference === 0;
 }
 
 async function mapWithConcurrency<T, U>(

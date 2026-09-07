@@ -11,6 +11,12 @@ import {
 } from "./smoke-devnet-backend-proof.mjs";
 
 const receiptId = `es_${"a".repeat(64)}`;
+const internalApiSecret = "test-internal-api-secret";
+
+const withInternalAuthentication = (options) => ({
+  ...options,
+  internalApiSecret,
+});
 
 const fixture = {
   schemaVersion: 1,
@@ -145,7 +151,10 @@ describe("devnet backend proof smoke", () => {
     };
 
     const proof = await runBackendProofSmoke(
-      { baseUrl: "https://eventseal.test/", fixture: path },
+      withInternalAuthentication({
+        baseUrl: "https://eventseal.test/",
+        fixture: path,
+      }),
       fetchFn,
     );
 
@@ -157,6 +166,12 @@ describe("devnet backend proof smoke", () => {
     expect(calls.every((call) => call.init.signal instanceof AbortSignal)).toBe(
       true,
     );
+    expect(calls[0].init.headers).toEqual({
+      "Content-Type": "application/json",
+      "X-EventSeal-Internal-Secret": internalApiSecret,
+    });
+    expect(calls[0].init.redirect).toBe("error");
+    expect(calls[1].init.headers).toBeUndefined();
     expect(proof.transactions.success).toMatchObject({
       signature: "success-signature",
       verdict: "verified",
@@ -201,7 +216,11 @@ describe("devnet backend proof smoke", () => {
 
     await mkdir(join(directory, "nested"));
     await runBackendProofSmoke(
-      { baseUrl: "https://eventseal.test", fixture: path, output },
+      withInternalAuthentication({
+        baseUrl: "https://eventseal.test",
+        fixture: path,
+        output,
+      }),
       fetchFn,
     );
 
@@ -234,7 +253,10 @@ describe("devnet backend proof smoke", () => {
     };
 
     const proof = await runBackendProofSmoke(
-      { baseUrl: "https://eventseal.test", fixture: repoFixturePath },
+      withInternalAuthentication({
+        baseUrl: "https://eventseal.test",
+        fixture: repoFixturePath,
+      }),
       fetchFn,
     );
 
@@ -257,7 +279,10 @@ describe("devnet backend proof smoke", () => {
 
     await expect(
       runBackendProofSmoke(
-        { baseUrl: "https://eventseal.test", fixture: path },
+        withInternalAuthentication({
+          baseUrl: "https://eventseal.test",
+          fixture: path,
+        }),
         fetchFn,
       ),
     ).rejects.toThrow("success fixture expectedVerdict mismatch");
@@ -280,7 +305,11 @@ describe("devnet backend proof smoke", () => {
 
     await expect(
       runBackendProofSmoke(
-        { baseUrl: "https://eventseal.test", fixture: path, timeoutMs: 1 },
+        withInternalAuthentication({
+          baseUrl: "https://eventseal.test",
+          fixture: path,
+          timeoutMs: 1,
+        }),
         fetchFn,
       ),
     ).rejects.toBeTruthy();
@@ -313,7 +342,10 @@ describe("devnet backend proof smoke", () => {
 
     await expect(
       runBackendProofSmoke(
-        { baseUrl: "https://eventseal.test", fixture: path },
+        withInternalAuthentication({
+          baseUrl: "https://eventseal.test",
+          fixture: path,
+        }),
         fetchFn,
       ),
     ).rejects.toThrow("failed transaction verdict mismatch");
@@ -342,7 +374,10 @@ describe("devnet backend proof smoke", () => {
 
     await expect(
       runBackendProofSmoke(
-        { baseUrl: "https://eventseal.test", fixture: path },
+        withInternalAuthentication({
+          baseUrl: "https://eventseal.test",
+          fixture: path,
+        }),
         fetchFn,
       ),
     ).rejects.toThrow("receipt_id mismatch");
@@ -368,7 +403,10 @@ describe("devnet backend proof smoke", () => {
 
     await expect(
       runBackendProofSmoke(
-        { baseUrl: "https://eventseal.test", fixture: path },
+        withInternalAuthentication({
+          baseUrl: "https://eventseal.test",
+          fixture: path,
+        }),
         fetchFn,
       ),
     ).rejects.toThrow("success transaction commitment mismatch");
@@ -397,29 +435,66 @@ describe("devnet backend proof smoke", () => {
 
     await expect(
       runBackendProofSmoke(
-        { baseUrl: "https://eventseal.test", fixture: path },
+        withInternalAuthentication({
+          baseUrl: "https://eventseal.test",
+          fixture: path,
+        }),
         fetchFn,
       ),
     ).rejects.toThrow("receipt commitment mismatch");
   });
 
   it("parses CLI overrides", () => {
-    const options = parseCliArgs([
-      "--base-url",
-      "https://eventseal.test",
-      "--fixture",
-      "/tmp/fixture.json",
-      "--output",
-      "/tmp/proof.json",
-      "--timeout-ms",
-      "1234",
-    ]);
+    const options = parseCliArgs(
+      [
+        "--base-url",
+        "https://eventseal.test",
+        "--fixture",
+        "/tmp/fixture.json",
+        "--output",
+        "/tmp/proof.json",
+        "--timeout-ms",
+        "1234",
+      ],
+      { EVENTSEAL_INTERNAL_API_SECRET: internalApiSecret },
+    );
 
     expect(options).toMatchObject({
       baseUrl: "https://eventseal.test",
       fixture: "/tmp/fixture.json",
+      internalApiSecret,
       output: "/tmp/proof.json",
       timeoutMs: 1234,
     });
+  });
+
+  it("requires internal authentication before sending a backend request", async () => {
+    const { path } = await writeFixture();
+    const fetchFn = vi.fn();
+
+    await expect(
+      runBackendProofSmoke(
+        { baseUrl: "https://eventseal.test", fixture: path },
+        fetchFn,
+      ),
+    ).rejects.toThrow("Set EVENTSEAL_INTERNAL_API_SECRET");
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("rejects an insecure backend URL before sending the internal credential", async () => {
+    const { path } = await writeFixture();
+    const fetchFn = vi.fn();
+
+    await expect(
+      runBackendProofSmoke(
+        withInternalAuthentication({
+          baseUrl: "http://eventseal.test",
+          fixture: path,
+        }),
+        fetchFn,
+      ),
+    ).rejects.toThrow("INSFORGE_BASE_URL must use HTTPS.");
+
+    expect(fetchFn).not.toHaveBeenCalled();
   });
 });

@@ -88,6 +88,34 @@ test("redirects home to the verifier and supports keyboard navigation", async ({
   await expectNoAxeViolations(page);
 });
 
+test("serves security headers on pages and API responses", async ({
+  page,
+  request,
+}) => {
+  const pageResponse = await page.goto("/verify");
+  const firstPageNonce = expectSecurityHeaders(pageResponse);
+  const renderedScriptNonces = await page
+    .locator("script")
+    .evaluateAll((scripts) =>
+      scripts
+        .map((script) => (script as HTMLScriptElement).nonce ?? "")
+        .filter((nonce) => nonce.length > 0),
+    );
+  expect(renderedScriptNonces.length).toBeGreaterThan(0);
+  expect(new Set(renderedScriptNonces)).toEqual(new Set([firstPageNonce]));
+
+  const secondPageResponse = await request.get("/verify");
+  const secondPageNonce = expectSecurityHeaders(secondPageResponse);
+  expect(secondPageNonce).not.toBe(firstPageNonce);
+
+  const apiResponse = await request.post("/api/inspect", {
+    data: "{}",
+    headers: { "Content-Type": "text/plain" },
+  });
+  expect(apiResponse.status()).toBe(415);
+  expectSecurityHeaders(apiResponse);
+});
+
 test("keeps inspection separate from verification", async ({ page }) => {
   await mockBrowserApis(page, verdictFixtures[0]);
   await page.goto("/verify");
@@ -295,4 +323,31 @@ async function expectNoAxeViolations(page: Page) {
       .map((violation) => `${violation.id}: ${violation.help}`)
       .join("\n"),
   ).toEqual([]);
+}
+
+function expectSecurityHeaders(
+  response: { headers(): Record<string, string> } | null,
+): string {
+  expect(response).not.toBeNull();
+  const headers = response?.headers() ?? {};
+  const policy = headers["content-security-policy"];
+
+  expect(policy).toContain("default-src 'self'");
+  expect(policy).toContain("frame-ancestors 'none'");
+  expect(policy).toContain("object-src 'none'");
+  expect(policy).toContain("'strict-dynamic'");
+  expect(policy).not.toContain("'unsafe-inline'");
+  expect(policy).not.toContain("'unsafe-eval'");
+  const nonce = policy?.match(/'nonce-([^']+)'/)?.[1];
+  expect(nonce).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(headers["permissions-policy"]).toContain("camera=()");
+  expect(headers["strict-transport-security"]).toBe(
+    "max-age=63072000; includeSubDomains; preload",
+  );
+  expect(headers["x-powered-by"]).toBeUndefined();
+
+  return nonce ?? "";
 }
