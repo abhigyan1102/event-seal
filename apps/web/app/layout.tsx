@@ -30,11 +30,7 @@ export default async function RootLayout({
       <body>
         <header className="global-nav">
           <nav className="global-nav__inner" aria-label="Primary navigation">
-            <Link
-              className="brand"
-              href="/verify"
-              aria-label="EventSeal verifier"
-            >
+            <Link className="brand" href="/" aria-label="EventSeal home">
               EventSeal
             </Link>
             <ActiveNavLink href="/verify">Verify</ActiveNavLink>
