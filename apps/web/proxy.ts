@@ -5,9 +5,19 @@ import { NextResponse } from "next/server";
 
 import { getAuthConfig } from "./lib/auth-config";
 import { authCookieOptions } from "./lib/auth-server";
+import { createContentSecurityPolicy } from "./lib/security-headers";
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const contentSecurityPolicy = createContentSecurityPolicy(nonce);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+  requestHeaders.set("x-nonce", nonce);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
 
   try {
     const config = getAuthConfig();

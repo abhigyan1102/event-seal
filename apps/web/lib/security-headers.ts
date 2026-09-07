@@ -4,6 +4,7 @@ export interface SecurityHeader {
 }
 
 export function createContentSecurityPolicy(
+  nonce: string,
   environment: string | undefined = process.env.NODE_ENV,
 ): string {
   const isDevelopment = environment === "development";
@@ -15,9 +16,9 @@ export function createContentSecurityPolicy(
     "frame-ancestors 'none'",
     "frame-src 'none'",
     "object-src 'none'",
-    "script-src 'self' 'unsafe-inline'" +
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'` +
       (isDevelopment ? " 'unsafe-eval'" : ""),
-    "style-src 'self' 'unsafe-inline'",
+    `style-src 'self' 'nonce-${nonce}'`,
     "img-src 'self' blob: data:",
     "font-src 'self' data:",
     "connect-src 'self'" + (isDevelopment ? " ws:" : ""),
@@ -31,10 +32,6 @@ export function createSecurityHeaders(
   environment: string | undefined = process.env.NODE_ENV,
 ): SecurityHeader[] {
   const headers: SecurityHeader[] = [
-    {
-      key: "Content-Security-Policy",
-      value: createContentSecurityPolicy(environment),
-    },
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     {
       key: "Permissions-Policy",

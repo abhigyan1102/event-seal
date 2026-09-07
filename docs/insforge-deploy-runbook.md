@@ -36,16 +36,16 @@ changes from their local terminal.
 Use the InsForge CLI through `npx`:
 
 ```bash
-npx @insforge/cli current
-npx @insforge/cli whoami
+npx -y @insforge/cli current
+npx -y @insforge/cli whoami
 ```
 
 If the CLI is not authenticated or the checkout is not linked, run the
 interactive setup from your own terminal:
 
 ```bash
-npx @insforge/cli login
-npx @insforge/cli link
+npx -y @insforge/cli login
+npx -y @insforge/cli link
 ```
 
 ## Server environment
@@ -79,47 +79,62 @@ cannot produce verified receipts.
 List configured secret keys without printing values:
 
 ```bash
-npx @insforge/cli secrets list
+npx -y @insforge/cli secrets list
 ```
 
-For initial setup, add missing secrets from your terminal. Do not paste real
-values into a PR, issue, chat, or screenshot:
+The InsForge CLI currently accepts new and rotated secret values as process
+arguments. Do not use that form for credentials because local process listings
+and shell audit tooling can capture it. The repository helper below calls the
+documented `POST /api/secrets` or `PUT /api/secrets/{key}` endpoint, obtains the
+linked project URL and administrative credential from the ignored
+`.insforge/project.json`, reads exactly one value from standard input, and never
+prints the value or response body.
+
+For initial setup, stream each value directly from the production secret
+manager. Replace the left-hand placeholder with that manager's non-logging read
+command; never paste the value into the command itself:
 
 ```bash
-npx @insforge/cli secrets add INSFORGE_BASE_URL <project-url>
-npx @insforge/cli secrets add INSFORGE_API_KEY <server-api-key>
-npx @insforge/cli secrets add EVENTSEAL_INTERNAL_API_SECRET <random-internal-api-secret>
-npx @insforge/cli secrets add EVENTSEAL_CLUSTER devnet
-npx @insforge/cli secrets add EVENTSEAL_EXPECTED_PROGRAM_ID <program-id>
-npx @insforge/cli secrets add EVENTSEAL_EVENT_FORMAT anchor-log
-npx @insforge/cli secrets add EVENTSEAL_EVENT_DISCRIMINATOR <16-hex-discriminator>
-npx @insforge/cli secrets add EVENTSEAL_WEBHOOK_SECRET <random-webhook-secret>
+<protected-secret-manager-read-command> | node scripts/configure-insforge-secret.mjs add EVENTSEAL_INTERNAL_API_SECRET
 ```
 
-Add the optional deployment-owned RPC endpoint when the deployment should avoid
-public cluster RPC defaults:
+Use the same stdin pattern for `INSFORGE_API_KEY`, RPC URLs that contain provider
+credentials, and `EVENTSEAL_WEBHOOK_SECRET`. It is also safe to use for the
+remaining configuration keys in the table. The helper's only process arguments
+are the non-secret action and key name.
+
+For rotation, change `add` to `update` while continuing to stream the new value
+from the protected manager:
 
 ```bash
-npx @insforge/cli secrets add SOLANA_RPC_DEVNET_URL <devnet-rpc-url>
-npx @insforge/cli secrets add SOLANA_RPC_MAINNET_URL <mainnet-rpc-url>
-npx @insforge/cli secrets add SOLANA_RPC_TESTNET_URL <testnet-rpc-url>
+<protected-secret-manager-read-command> | node scripts/configure-insforge-secret.mjs update EVENTSEAL_INTERNAL_API_SECRET
 ```
 
-For secret rotation or existing keys, update values explicitly:
+### Vercel binding and coordinated rotation
 
-```bash
-npx @insforge/cli secrets update INSFORGE_BASE_URL --value <project-url>
-npx @insforge/cli secrets update INSFORGE_API_KEY --value <server-api-key>
-npx @insforge/cli secrets update EVENTSEAL_INTERNAL_API_SECRET --value <random-internal-api-secret>
-npx @insforge/cli secrets update SOLANA_RPC_DEVNET_URL --value <devnet-rpc-url>
-npx @insforge/cli secrets update SOLANA_RPC_MAINNET_URL --value <mainnet-rpc-url>
-npx @insforge/cli secrets update SOLANA_RPC_TESTNET_URL --value <testnet-rpc-url>
-npx @insforge/cli secrets update EVENTSEAL_CLUSTER --value devnet
-npx @insforge/cli secrets update EVENTSEAL_EXPECTED_PROGRAM_ID --value <program-id>
-npx @insforge/cli secrets update EVENTSEAL_EVENT_FORMAT --value anchor-log
-npx @insforge/cli secrets update EVENTSEAL_EVENT_DISCRIMINATOR --value <16-hex-discriminator>
-npx @insforge/cli secrets update EVENTSEAL_WEBHOOK_SECRET --value <random-webhook-secret>
-```
+After PR #21 links the production Vercel project, open **Project Settings →
+Environment Variables** and create `EVENTSEAL_INTERNAL_API_SECRET` for the
+Production environment. Mark it **Sensitive** and paste it directly from the
+protected manager. Do not prefix the name with `NEXT_PUBLIC_`. Use the exact
+value stored in InsForge. Vercel environment changes apply only to new
+deployments, so redeploy the approved commit after creating or changing it.
+
+The application accepts one internal credential at a time, so rotate it during
+a short maintenance window:
+
+1. Generate and store a new value in the protected manager.
+2. Stream it to the InsForge helper using `update`.
+3. Replace the Vercel Sensitive value directly from the manager and redeploy the
+   exact approved commit.
+4. Run the authenticated backend proof and the production `/api/inspect` and
+   `/api/verify` release smokes. Confirm neither public route returns the
+   configuration error `503`, while an unauthenticated direct function call
+   still returns `401`.
+5. Remove the previous value from the manager only after all smokes pass. If
+   they fail, restore the previous value on both systems and redeploy.
+
+Never place either value in shell history, process arguments, deployment logs,
+PRs, issues, chats, screenshots, or deployment records.
 
 ## Preflight
 
@@ -277,25 +292,11 @@ assert_status 401 "$AUTH_BODY" \
   -d '{'
 
 assert_json_field "$AUTH_BODY" error Unauthorized
-
-VALIDATION_BODY=$(mktemp)
-assert_status 400 "$VALIDATION_BODY" \
-  -X POST "<INSFORGE_BASE_URL>/functions/verify-event" \
-  -H "Content-Type: application/json" \
-  -H "X-EventSeal-Internal-Secret: ${EVENTSEAL_INTERNAL_API_SECRET}" \
-  -d '{}'
-
-assert_json_field "$VALIDATION_BODY" error "signature must be a non-empty string"
-```
-
-Expected validation response:
-
-```json
-{ "error": "signature must be a non-empty string" }
 ```
 
 The malformed unauthenticated body must return `401`, proving authentication
-runs before JSON parsing. Repeat that boundary check for inspection:
+runs before JSON parsing without putting the credential in process arguments.
+Repeat that boundary check for inspection:
 
 ```bash
 INSPECT_AUTH_BODY=$(mktemp)
@@ -341,63 +342,18 @@ Expected response without the shared secret:
 { "error": "Unauthorized" }
 ```
 
-Run a positive smoke only after you have a finalized devnet transaction fixture.
-Capture the response so the same receipt can be read back through `get-receipt`:
-
-```bash
-VERIFY_BODY=$(mktemp)
-assert_status 200 "$VERIFY_BODY" \
-  -X POST "<INSFORGE_BASE_URL>/functions/verify-event" \
-  -H "Content-Type: application/json" \
-  -H "X-EventSeal-Internal-Secret: ${EVENTSEAL_INTERNAL_API_SECRET}" \
-  -d '{
-    "signature": "<finalized-devnet-signature>",
-    "cluster": "devnet",
-    "expectedProgramId": "<program-id>",
-    "event": {
-      "format": "anchor-log",
-      "discriminator": "<16-hex-discriminator>"
-    }
-  }'
-
-assert_json_field "$VERIFY_BODY" verdict verified
-
-RECEIPT_ID=$(node -e '
-const { readFileSync } = require("node:fs");
-const response = JSON.parse(readFileSync(process.argv[1], "utf8"));
-if (response.verdict !== "verified" || typeof response.receiptId !== "string") {
-  process.exit(1);
-}
-process.stdout.write(response.receiptId);
-' "$VERIFY_BODY")
-
-RECEIPT_BODY=$(mktemp)
-assert_status 200 "$RECEIPT_BODY" \
-  "<INSFORGE_BASE_URL>/functions/get-receipt?receiptId=${RECEIPT_ID}"
-
-RECEIPT_ID="$RECEIPT_ID" node -e '
-const { readFileSync } = require("node:fs");
-const receipt = JSON.parse(readFileSync(process.argv[1], "utf8"));
-if (receipt.receipt_id !== process.env.RECEIPT_ID) process.exit(1);
-' "$RECEIPT_BODY"
-```
-
-Acceptance target for a known-good fixture:
-
-```json
-{ "verdict": "verified" }
-```
-
-The first response must include `verdict: "verified"` and a deterministic
-`receiptId`. The follow-up `get-receipt` response must return the stored receipt
-row for that same `receiptId`.
-
-The automated form of this proof also reads the internal secret exclusively
-from the environment and does not include it in output:
+Run the authenticated positive proof only after a finalized devnet fixture is
+available. Have the protected manager inject `EVENTSEAL_INTERNAL_API_SECRET`
+into the smoke process environment; do not append the value to this command.
+The script sends the credential as an HTTP header but never prints or writes it:
 
 ```bash
 INSFORGE_BASE_URL="<INSFORGE_BASE_URL>" npm run smoke:devnet-backend
 ```
+
+The proof requires a verified response with a deterministic receipt ID, reads
+that receipt back, and confirms the known failed transaction stays rejected
+without a receipt.
 
 ## Vercel rate limit release gate
 
