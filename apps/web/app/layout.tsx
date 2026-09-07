@@ -13,7 +13,7 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "EventSeal — Verify Solana events",
+  title: "EventSeal",
   description:
     "Inspect finalized transaction evidence before your backend acts on a Solana event.",
 };
