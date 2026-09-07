@@ -9,6 +9,7 @@ import {
 } from "../../../lib/verify-route";
 import { parseServiceUrl } from "../../../lib/auth-config-values";
 import { createProtectedFunctionInvokeOptions } from "../../../lib/internal-function-auth";
+import { createRedirectRejectingFetch } from "../../../lib/redirect-safe-fetch";
 
 export const runtime = "nodejs";
 
@@ -33,7 +34,11 @@ const handlePost = createVerifyRoute(async (input) => {
     throw new VerificationAdapterError("NOT_CONFIGURED");
   }
 
-  const client = createClient({ baseUrl, anonKey });
+  const client = createClient({
+    baseUrl,
+    anonKey,
+    fetch: createRedirectRejectingFetch(),
+  });
   const { data, error } = await client.functions.invoke<VerificationResult>(
     "verify-event",
     invokeOptions,

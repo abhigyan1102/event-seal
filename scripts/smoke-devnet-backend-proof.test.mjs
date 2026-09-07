@@ -170,6 +170,7 @@ describe("devnet backend proof smoke", () => {
       "Content-Type": "application/json",
       "X-EventSeal-Internal-Secret": internalApiSecret,
     });
+    expect(calls[0].init.redirect).toBe("error");
     expect(calls[1].init.headers).toBeUndefined();
     expect(proof.transactions.success).toMatchObject({
       signature: "success-signature",
@@ -477,6 +478,23 @@ describe("devnet backend proof smoke", () => {
         fetchFn,
       ),
     ).rejects.toThrow("Set EVENTSEAL_INTERNAL_API_SECRET");
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("rejects an insecure backend URL before sending the internal credential", async () => {
+    const { path } = await writeFixture();
+    const fetchFn = vi.fn();
+
+    await expect(
+      runBackendProofSmoke(
+        withInternalAuthentication({
+          baseUrl: "http://eventseal.test",
+          fixture: path,
+        }),
+        fetchFn,
+      ),
+    ).rejects.toThrow("INSFORGE_BASE_URL must use HTTPS.");
+
     expect(fetchFn).not.toHaveBeenCalled();
   });
 });

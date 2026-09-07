@@ -126,7 +126,11 @@ function normalizeBaseUrl(value) {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new Error("Set INSFORGE_BASE_URL or pass --base-url.");
   }
-  return value.replace(/\/+$/, "");
+  const baseUrl = new URL(value.trim());
+  if (baseUrl.protocol !== "https:") {
+    throw new Error("INSFORGE_BASE_URL must use HTTPS.");
+  }
+  return baseUrl.href.replace(/\/+$/, "");
 }
 
 function normalizeInternalApiSecret(value) {
@@ -220,6 +224,7 @@ async function invokeVerification(
 ) {
   return await requestJson(fetchFn, `${baseUrl}/functions/verify-event`, {
     method: "POST",
+    redirect: "error",
     headers: {
       "Content-Type": "application/json",
       [INTERNAL_API_SECRET_HEADER]: internalApiSecret,

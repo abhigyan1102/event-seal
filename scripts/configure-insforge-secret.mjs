@@ -39,10 +39,14 @@ export async function configureInsforgeSecret(
 ) {
   const host = readRequiredConfig(projectConfig, "oss_host");
   const apiKey = readRequiredConfig(projectConfig, "api_key");
+  const hostUrl = new URL(host);
+  if (hostUrl.protocol !== "https:") {
+    throw new Error("Linked InsForge oss_host must use HTTPS.");
+  }
   const endpoint =
     action === "add"
-      ? new URL("/api/secrets", host)
-      : new URL(`/api/secrets/${encodeURIComponent(key)}`, host);
+      ? new URL("/api/secrets", hostUrl)
+      : new URL(`/api/secrets/${encodeURIComponent(key)}`, hostUrl);
   const body = action === "add" ? { key, value } : { value };
 
   const response = await fetchFn(endpoint, {

@@ -82,6 +82,27 @@ describe("process-safe InsForge secret configuration", () => {
     });
   });
 
+  it("rejects an insecure linked host before sending credentials", async () => {
+    const fetchFn = vi.fn();
+
+    await expect(
+      configureInsforgeSecret(
+        {
+          action: "add",
+          key: "EVENTSEAL_INTERNAL_API_SECRET",
+          value: "new-secret",
+          projectConfig: {
+            ...projectConfig,
+            oss_host: "http://eventseal.insforge.test",
+          },
+        },
+        fetchFn,
+      ),
+    ).rejects.toThrow("Linked InsForge oss_host must use HTTPS.");
+
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
   it("reports only the HTTP status when InsForge rejects a request", async () => {
     const fetchFn = vi.fn(async () => ({
       ok: false,
