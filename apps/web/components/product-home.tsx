@@ -181,14 +181,9 @@ export function ProductHome() {
             <Link className="home-button home-button--primary" href="/verify">
               Verify a transaction <span aria-hidden="true">→</span>
             </Link>
-            <a
-              className="home-button home-button--secondary"
-              href="https://github.com/abhigyan1102/event-seal/tree/main/docs"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Read the docs <span aria-hidden="true">↗</span>
-            </a>
+            <Link className="home-button home-button--secondary" href="/docs">
+              Read the docs <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
         <div className="home-hero__media" aria-hidden="true">
