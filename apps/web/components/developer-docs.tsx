@@ -8,248 +8,14 @@ import { useRef, useState } from "react";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const concepts = [
-  {
-    id: "verdicts",
-    title: "Verdicts",
-    body: "Verified means the requested identity passed. Rejected means available evidence disproved it. Indeterminate means the evidence was not strong enough.",
-    code: '"verified" | "rejected" | "indeterminate"',
-  },
-  {
-    id: "receipts",
-    title: "Public receipts",
-    body: "A deterministic receipt ID is issued only when the verifier has a complete identity and immutable event evidence. Share it without exposing account data.",
-    code: "/receipts/es_<sha256>",
-  },
-  {
-    id: "boundary",
-    title: "Security boundary",
-    body: "Browser requests use the same-origin API. The server attaches the internal credential before calling protected verification functions.",
-    code: "browser -> /api/verify -> protected function",
-  },
-] as const;
-
-type ConceptId = (typeof concepts)[number]["id"];
-
-export function DeveloperDocs() {
-  const root = useRef<HTMLElement>(null);
-  const [activeConcept, setActiveConcept] = useState<ConceptId>("verdicts");
-
-  useGSAP(
-    () => {
-      const media = gsap.matchMedia();
-
-      media.add(
-        "(min-width: 981px) and (prefers-reduced-motion: no-preference)",
-        () => {
-          const intro = root.current?.querySelector<HTMLElement>(
-            ".docs-narrative__intro",
-          );
-          const panels = gsap.utils.toArray<HTMLElement>(
-            ".docs-narrative-panel",
-          );
-
-          if (intro) {
-            ScrollTrigger.create({
-              trigger: ".docs-narrative",
-              start: "top 88px",
-              end: "bottom bottom-=120",
-              pin: intro,
-              pinSpacing: false,
-            });
-          }
-
-          panels.forEach((panel, index) => {
-            gsap.fromTo(
-              panel,
-              { y: 96, scale: 0.94 },
-              {
-                y: 0,
-                scale: 1,
-                ease: "none",
-                scrollTrigger: {
-                  trigger: panel,
-                  start: "top 92%",
-                  end: "top 48%",
-                  scrub: 0.55,
-                },
-                delay: index * 0.04,
-              },
-            );
-          });
-        },
-      );
-
-      media.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from("[data-docs-intro]", {
-          autoAlpha: 0,
-          y: 30,
-          duration: 0.82,
-          ease: "power3.out",
-          stagger: 0.08,
-        });
-
-        gsap.fromTo(
-          ".docs-hero__ledger",
-          { opacity: 0.32, scale: 0.84 },
-          {
-            opacity: 0.92,
-            scale: 1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: ".docs-hero",
-              start: "top top",
-              end: "bottom 26%",
-              scrub: 0.7,
-            },
-          },
-        );
-      });
-
-      return () => media.revert();
-    },
-    { scope: root },
-  );
-
-  return (
-    <main className="developer-docs" ref={root}>
-      <section className="docs-hero" id="overview" aria-labelledby="docs-title">
-        <div className="docs-hero__copy">
-          <h1
-            id="docs-title"
-            aria-label="Build on verified Solana events."
-            data-docs-intro
-          >
-            <span aria-hidden="true">Build on verified</span>
-            <span aria-hidden="true">
-              Solana <i className="docs-hero__inline-ledger" /> events.
-            </span>
-          </h1>
-          <p data-docs-intro>
-            Inspect finalized evidence, verify the identity your application
-            expects, and decide from an explicit verdict.
-          </p>
-          <div className="docs-hero__actions" data-docs-intro>
-            <a className="docs-button docs-button--primary" href="#quickstart">
-              Start locally <span aria-hidden="true">↓</span>
-            </a>
-            <Link className="docs-button docs-button--secondary" href="/verify">
-              Open verifier <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </div>
-        <div className="docs-hero__ledger" aria-hidden="true" />
-      </section>
-
-      <section
-        className="docs-quickstart"
-        id="quickstart"
-        aria-labelledby="quickstart-title"
-      >
-        <div className="docs-section-heading">
-          <h2 id="quickstart-title">Quickstart</h2>
-          <p>
-            Run the current repository, then keep inspection and verification as
-            separate decisions.
-          </p>
-        </div>
-
-        <div className="docs-quickstart-grid">
-          <article className="docs-local-card">
-            <div>
-              <h3>Run locally</h3>
-              <p>
-                The SDK currently builds from this monorepo workspace. The web
-                app starts on port 3000.
-              </p>
-            </div>
-            <pre tabIndex={0} aria-label="Local setup commands">
-              <code>{`git clone https://github.com/abhigyan1102/event-seal.git
+const setupCode = `git clone https://github.com/abhigyan1102/event-seal.git
 cd event-seal
 npm install
 npm run dev
 
-# open http://localhost:3000`}</code>
-            </pre>
-          </article>
+# open http://localhost:3000`;
 
-          <article className="docs-quick-card docs-quick-card--inspect">
-            <span className="docs-quick-mark" aria-hidden="true" />
-            <div>
-              <h3>Inspect</h3>
-              <p>
-                Discover untrusted log candidates from finalized transaction
-                evidence. Inspection has no verdict, receipt, or database write.
-              </p>
-              <code className="docs-route-label">POST /api/inspect</code>
-            </div>
-          </article>
-
-          <article className="docs-quick-card docs-quick-card--verify">
-            <span className="docs-quick-mark" aria-hidden="true" />
-            <div>
-              <h3>Verify</h3>
-              <p>
-                Supply the program and event discriminator from a trusted IDL or
-                deployment record. Never promote discovered bytes into trust.
-              </p>
-              <code className="docs-route-label">POST /api/verify</code>
-            </div>
-          </article>
-        </div>
-
-        <div className="docs-vocabulary" aria-label="Verification vocabulary">
-          <div className="docs-vocabulary__track">
-            {[0, 1].flatMap((group) =>
-              [
-                "Finality",
-                "Execution",
-                "Program identity",
-                "Event identity",
-                "Deterministic receipt",
-              ].map((item) => (
-                <span key={`${group}-${item}`} aria-hidden={group === 1}>
-                  {item}
-                  <i aria-hidden="true" />
-                </span>
-              )),
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="docs-narrative"
-        id="workflow"
-        aria-labelledby="workflow-title"
-      >
-        <div className="docs-narrative__intro">
-          <h2 id="workflow-title">Inspect first. Verify what you trust.</h2>
-          <p>
-            EventSeal separates discovery from authorization. Your application
-            supplies the trusted identity and decides what each verdict permits.
-          </p>
-          <nav aria-label="Documentation sections">
-            <a href="#inspect">Inspect</a>
-            <a href="#verify">Verify</a>
-            <a href="#decide">Decide</a>
-            <a href="#concepts">Reference</a>
-          </nav>
-        </div>
-
-        <div className="docs-narrative__panels">
-          <article className="docs-narrative-panel" id="inspect">
-            <div className="docs-narrative-panel__copy">
-              <span aria-hidden="true">1</span>
-              <h3>Inspect</h3>
-              <p>
-                Ask what evidence is available for a signature and cluster.
-                Candidate bytes remain untrusted.
-              </p>
-              <strong>No verdict. No receipt.</strong>
-            </div>
-            <pre tabIndex={0} aria-label="Inspect transaction example">
-              <code>{`import { inspectTransaction } from "@eventseal/sdk";
+const inspectCode = `import { inspectTransaction } from "@eventseal/sdk";
 
 const inspection = await inspectTransaction({
   signature,
@@ -258,22 +24,9 @@ const inspection = await inspectTransaction({
 
 if (inspection.reasonCode === "CANDIDATES_FOUND") {
   // Confirm identity from your trusted source.
-}`}</code>
-            </pre>
-          </article>
+}`;
 
-          <article className="docs-narrative-panel" id="verify">
-            <div className="docs-narrative-panel__copy">
-              <span aria-hidden="true">2</span>
-              <h3>Verify</h3>
-              <p>
-                Check one finalized event against the expected program and
-                eight-byte Anchor discriminator.
-              </p>
-              <strong>Trusted identity goes in.</strong>
-            </div>
-            <pre tabIndex={0} aria-label="Verify event example">
-              <code>{`import { verifyEvent } from "@eventseal/sdk";
+const verifyCode = `import { verifyEvent } from "@eventseal/sdk";
 
 const result = await verifyEvent({
   signature,
@@ -281,66 +34,434 @@ const result = await verifyEvent({
   expectedProgramId,
   event: {
     format: "anchor-log",
-    discriminator: "3f17c7d4d6763a2b",
+    discriminator: expectedDiscriminator,
   },
   commitment: "finalized",
-});`}</code>
-            </pre>
-          </article>
+});`;
 
-          <article className="docs-narrative-panel" id="decide">
-            <div className="docs-narrative-panel__copy">
-              <span aria-hidden="true">3</span>
-              <h3>Decide</h3>
-              <p>
-                Branch on the verdict. Only verified evidence should cross an
-                authorization boundary.
-              </p>
-              <strong>Missing evidence never passes.</strong>
-            </div>
-            <pre tabIndex={0} aria-label="Handle verification verdict example">
-              <code>{`switch (result.verdict) {
+const decideCode = `switch (result.verdict) {
   case "verified":
-    await performProtectedAction(result.receiptId);
+    // Your application checks authorization and replay
+    // protection before performing any protected action.
     break;
   case "rejected":
   case "indeterminate":
     return;
-}`}</code>
-            </pre>
-            <div className="docs-verdicts" aria-label="Verdict meanings">
-              <p>
-                <b>Verified</b>
-                <span>The requested identity passed.</span>
-              </p>
-              <p>
-                <b>Rejected</b>
-                <span>Available evidence disproved it.</span>
-              </p>
-              <p>
-                <b>Indeterminate</b>
-                <span>The evidence was not sufficient.</span>
-              </p>
+}`;
+
+const concepts = [
+  {
+    id: "verdicts",
+    title: "Verdicts",
+    body: "Verified means the requested identity passed. Rejected means available evidence disproved it. Indeterminate means the evidence was not strong enough.",
+    code: '"verified" | "rejected" | "indeterminate"',
+    note: "Treat indeterminate as a stop, not as a tentative success.",
+  },
+  {
+    id: "receipts",
+    title: "Public receipts",
+    body: "A deterministic receipt ID is issued only when the verifier has a complete identity and immutable event evidence. Share it without exposing account data.",
+    code: "/receipts/es_<sha256>",
+    note: "Public receipt evidence and private saved history are separate.",
+  },
+  {
+    id: "boundary",
+    title: "Security boundary",
+    body: "Browser requests use the same-origin API. The server attaches the internal credential before calling protected verification functions.",
+    code: "browser → /api/verify → protected function",
+    note: "The internal credential stays on the server. It never enters browser code.",
+  },
+] as const;
+
+const scenarios = [
+  {
+    label: "Verified",
+    code: "VERIFIED",
+    title: "The expected event matches.",
+    body: "Finality, execution, program attribution, and event identity passed. Apply your application's authorization and business rules.",
+    className: "verified",
+  },
+  {
+    label: "Rejected",
+    code: "TX_FAILED",
+    title: "The transaction emitted an event, then failed.",
+    body: "The log does not authorize an action. Stop and record the rejection reason.",
+    className: "rejected",
+  },
+  {
+    label: "Indeterminate",
+    code: "RPC_UNAVAILABLE",
+    title: "The RPC cannot supply reliable evidence.",
+    body: "Do not act on this result. Retry or escalate according to the reason code and your application's policy.",
+    className: "indeterminate",
+  },
+] as const;
+
+const references = [
+  {
+    title: "API reference",
+    description: "Inputs, outputs, and reason codes.",
+    file: "api-reference.md",
+  },
+  {
+    title: "Verification invariants",
+    description: "The checks behind every decision.",
+    file: "verification-invariants.md",
+  },
+  {
+    title: "Transaction inspection",
+    description: "Candidate discovery and its limits.",
+    file: "transaction-inspection.md",
+  },
+  {
+    title: "Threat model",
+    description: "What EventSeal protects and where it stops.",
+    file: "threat-model.md",
+  },
+];
+
+function CodeBlock({
+  label,
+  language,
+  code,
+}: {
+  label: string;
+  language: string;
+  code: string;
+}) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
+  const tokens = code.split(
+    language === "Terminal"
+      ? /(#[^\n]*)/g
+      : /("(?:[^"\\]|\\.)*"|\/\/[^\n]*|\b(?:import|from|const|if|await|switch|case|break|return)\b)/g,
+  );
+  return (
+    <div className="docs-code">
+      <div className="docs-code__toolbar">
+        <span>{language}</span>
+        <button
+          type="button"
+          aria-label={`Copy ${label.toLowerCase()}`}
+          onClick={() => void copy()}
+        >
+          {copyState === "copied" ? "Copied" : "Copy"}{" "}
+          <span aria-hidden="true">⧉</span>
+        </button>
+      </div>
+      <pre tabIndex={0} aria-label={label}>
+        <code>
+          {tokens.map((token, index) => {
+            const type = token.startsWith('"')
+              ? "string"
+              : token.startsWith("//") || token.startsWith("#")
+                ? "comment"
+                : /^(import|from|const|if|await|switch|case|break|return)$/.test(
+                      token,
+                    )
+                  ? "keyword"
+                  : "plain";
+            return (
+              <span className={`docs-code__${type}`} key={index}>
+                {token}
+              </span>
+            );
+          })}
+        </code>
+      </pre>
+      <p className="docs-code__status" role="status">
+        {copyState === "copied"
+          ? "Copied to clipboard."
+          : copyState === "failed"
+            ? "Copy unavailable. Select the code to copy it manually."
+            : ""}
+      </p>
+    </div>
+  );
+}
+
+export function DeveloperDocs() {
+  const root = useRef<HTMLElement>(null);
+  const [activeConcept, setActiveConcept] = useState<string>("verdicts");
+  const [activeStep, setActiveStep] = useState("inspect");
+  const [scenario, setScenario] = useState(0);
+
+  useGSAP(
+    () => {
+      const media = gsap.matchMedia();
+      media.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.from("[data-docs-intro]", {
+          y: 18,
+          duration: 0.7,
+          stagger: 0.07,
+          ease: "power3.out",
+        });
+        gsap.fromTo(
+          "[data-docs-word]",
+          { color: "#65705e" },
+          {
+            color: "#20231f",
+            stagger: 0.12,
+            ease: "none",
+            scrollTrigger: {
+              trigger: ".docs-trust-statement",
+              start: "top 90%",
+              end: "top 50%",
+              scrub: true,
+            },
+          },
+        );
+      });
+      media.add(
+        "(min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)",
+        () => {
+          ScrollTrigger.create({
+            trigger: ".docs-flow__rail",
+            start: "top 112px",
+            endTrigger: ".docs-flow__content",
+            end: "bottom bottom",
+            pin: true,
+            pinSpacing: false,
+            invalidateOnRefresh: true,
+          });
+        },
+      );
+      for (const id of ["inspect", "verify", "decide"]) {
+        ScrollTrigger.create({
+          trigger: `#${id}`,
+          start: "top 38%",
+          end: "bottom 38%",
+          onEnter: () => setActiveStep(id),
+          onEnterBack: () => setActiveStep(id),
+        });
+      }
+      return () => media.revert();
+    },
+    { scope: root },
+  );
+
+  return (
+    <main className="developer-docs" ref={root}>
+      <section className="docs-hero" id="overview" aria-labelledby="docs-title">
+        <h1 id="docs-title" data-docs-intro>
+          <span>Build on verified</span>
+          <span>Solana events.</span>
+        </h1>
+        <p data-docs-intro>
+          Inspect a transaction. Verify the event you expect.
+          <br className="docs-mobile-break" /> Decide from the evidence.
+        </p>
+        <div className="docs-actions" data-docs-intro>
+          <a className="docs-button docs-button--primary" href="#quickstart">
+            Start locally <span aria-hidden="true">↓</span>
+          </a>
+          <Link className="docs-button docs-button--secondary" href="/verify">
+            Open verifier <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+        <div className="docs-hero__media" aria-hidden="true">
+          <img
+            src="/docs/field-guide.webp"
+            width={1536}
+            height={1024}
+            alt=""
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+        </div>
+      </section>
+
+      <nav className="docs-chapters" aria-label="Documentation chapters">
+        <a href="#quickstart">Quickstart</a>
+        <a href="#inspect">Inspect</a>
+        <a href="#verify">Verify</a>
+        <a href="#decide">Decide</a>
+        <a href="#concepts">Concepts</a>
+      </nav>
+
+      <section
+        className="docs-quickstart docs-section"
+        aria-labelledby="quickstart"
+      >
+        <h2 id="quickstart">Start with the repository.</h2>
+        <p className="docs-section-lede">
+          The SDK builds inside this workspace. Start here for local
+          development.
+        </p>
+        <div className="docs-quickstart-grid">
+          <CodeBlock
+            label="Local setup commands"
+            language="Terminal"
+            code={setupCode}
+          />
+          <aside
+            className="docs-prerequisites"
+            aria-labelledby="prerequisites-title"
+          >
+            <h3 id="prerequisites-title">Before you run it</h3>
+            <ul>
+              <li>Use Node.js 20.18 or later.</li>
+              <li>Install dependencies from the repository root.</li>
+              <li>Configure the web environment using the README.</li>
+            </ul>
+            <a
+              href="https://github.com/abhigyan1102/event-seal#local-development"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the setup guide <span aria-hidden="true">↗</span>
+            </a>
+            <p>
+              The SDK is currently distributed through this repository, not as a
+              public npm release.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section
+        className="docs-flow docs-section"
+        id="workflow"
+        aria-labelledby="workflow-title"
+      >
+        <aside className="docs-flow__rail">
+          <h2 id="workflow-title">The verification flow</h2>
+          <nav aria-label="Verification flow sections">
+            {["inspect", "verify", "decide"].map((id) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                aria-current={activeStep === id ? "location" : undefined}
+              >
+                {id.charAt(0).toUpperCase() + id.slice(1)}
+              </a>
+            ))}
+          </nav>
+          <p>Discovered candidates do not become trusted inputs.</p>
+        </aside>
+        <div className="docs-flow__content">
+          <article className="docs-step" id="inspect">
+            <h3>Inspect the transaction.</h3>
+            <p>
+              Start with a signature and network to discover the available
+              evidence. Candidate program IDs and event bytes remain untrusted.
+            </p>
+            <p className="docs-endpoint">POST /api/inspect</p>
+            <CodeBlock
+              label="Inspect transaction example"
+              language="TypeScript · SDK"
+              code={inspectCode}
+            />
+            <p className="docs-boundary-note">
+              <strong>No verdict. No receipt.</strong> Inspection does not
+              verify event identity or persist evidence.
+            </p>
+          </article>
+          <article className="docs-step" id="verify">
+            <h3>Verify your expected event.</h3>
+            <p>
+              Supply the program ID and event discriminator from your trusted
+              IDL or deployment configuration. Never take these values from
+              inspection candidates.
+            </p>
+            <p className="docs-endpoint">POST /api/verify</p>
+            <CodeBlock
+              label="Verify event example"
+              language="TypeScript · SDK"
+              code={verifyCode}
+            />
+            <p className="docs-boundary-note">
+              <strong>Trusted identity goes in.</strong> The expected
+              discriminator must be eight bytes, encoded as 16 lowercase
+              hexadecimal characters.
+            </p>
+          </article>
+          <article className="docs-step" id="decide">
+            <h3>Decide from the verdict.</h3>
+            <p>
+              Only verified evidence passes the event checks. Your application
+              still decides whether an action is authorized and whether it has
+              already been processed.
+            </p>
+            <CodeBlock
+              label="Handle verification verdict example"
+              language="TypeScript · Application policy"
+              code={decideCode}
+            />
+            <p className="docs-boundary-note">
+              <strong>Missing evidence never passes.</strong> Rejected and
+              indeterminate results must not trigger a protected action.
+            </p>
+            <div
+              className="docs-examples"
+              role="region"
+              aria-label="Verdict examples"
+              aria-roledescription="carousel"
+            >
+              <div className="docs-examples__toolbar">
+                <span>Example outcome</span>
+                <div>
+                  <button
+                    type="button"
+                    aria-label="Previous verdict example"
+                    onClick={() => setScenario((value) => (value + 2) % 3)}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next verdict example"
+                    onClick={() => setScenario((value) => (value + 1) % 3)}
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+              <div aria-live="polite" aria-atomic="true">
+                {scenarios.map((item, index) => (
+                  <div
+                    className="docs-example"
+                    hidden={scenario !== index}
+                    key={item.code}
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`${index + 1} of 3: ${item.label}`}
+                  >
+                    <p
+                      className={`docs-example__verdict docs-example__verdict--${item.className}`}
+                    >
+                      {item.label} <code>{item.code}</code>
+                    </p>
+                    <h4>{item.title}</h4>
+                    <p>{item.body}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </article>
         </div>
       </section>
 
       <section
-        className="docs-concepts"
-        id="concepts"
-        aria-labelledby="concepts-title"
+        className="docs-concepts docs-section"
+        aria-labelledby="concepts"
       >
-        <div className="docs-section-heading docs-section-heading--concepts">
-          <h2 id="concepts-title">Core concepts at a glance.</h2>
-          <p>
-            These boundaries keep unavailable or ambiguous evidence from being
-            presented as proof.
-          </p>
-        </div>
-
+        <h2 id="concepts">Know what the result means.</h2>
+        <p className="docs-section-lede">
+          Three boundaries to keep explicit in your integration.
+        </p>
         <div className="docs-concept-accordion">
-          {concepts.map((concept, index) => {
+          {concepts.map((concept) => {
             const active = activeConcept === concept.id;
             return (
               <article
@@ -351,70 +472,70 @@ const result = await verifyEvent({
                   type="button"
                   aria-controls={`concept-${concept.id}`}
                   aria-expanded={active}
-                  onClick={() => setActiveConcept(concept.id)}
+                  onClick={() => setActiveConcept(active ? "" : concept.id)}
                 >
-                  <span aria-hidden="true">0{index + 1}</span>
-                  <strong>{concept.title}</strong>
+                  <span>{concept.title}</span>
+                  <span aria-hidden="true">{active ? "−" : "+"}</span>
                 </button>
                 <div
-                  className="docs-concept__content"
                   id={`concept-${concept.id}`}
+                  className="docs-concept__content"
                   hidden={!active}
                 >
                   <p>{concept.body}</p>
                   <code>{concept.code}</code>
+                  <p className="docs-concept__note">{concept.note}</p>
                 </div>
               </article>
             );
           })}
         </div>
+        <p className="docs-trust-statement">
+          {"Verify the evidence. Keep your own trust boundary."
+            .split(" ")
+            .map((word, index) => (
+              <span data-docs-word key={index}>
+                {word}{" "}
+              </span>
+            ))}
+        </p>
       </section>
 
-      <section className="docs-reference" aria-labelledby="reference-title">
+      <section
+        className="docs-reference docs-section"
+        aria-labelledby="reference-title"
+      >
         <div className="docs-reference__copy">
-          <h2 id="reference-title">Keep the trust boundary explicit.</h2>
+          <h2 id="reference-title">
+            Keep the evidence
+            <br />
+            close at hand.{" "}
+            <span className="docs-reference__inline-image" aria-hidden="true" />
+          </h2>
           <p>
-            Use the verifier for proof, then apply your own business rules
-            before your backend acts.
+            Use the verifier, then apply your own authorization and business
+            rules.
           </p>
-          <div className="docs-reference__actions">
-            <Link className="docs-button docs-button--primary" href="/verify">
-              Verify a transaction <span aria-hidden="true">→</span>
-            </Link>
+          <Link className="docs-button docs-button--primary" href="/verify">
+            Open verifier <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+        <div className="docs-reference__links">
+          {references.map((reference) => (
             <a
-              className="docs-button docs-button--dark"
-              href="https://github.com/abhigyan1102/event-seal/blob/main/docs/api-reference.md"
+              key={reference.file}
+              href={`https://github.com/abhigyan1102/event-seal/blob/main/docs/${reference.file}`}
               target="_blank"
               rel="noreferrer"
             >
-              Read the API reference <span aria-hidden="true">↗</span>
+              <span>
+                {reference.title}
+                <span aria-hidden="true">↗</span>
+              </span>
+              <p>{reference.description}</p>
             </a>
-          </div>
+          ))}
         </div>
-        <div className="docs-reference__links">
-          <a
-            href="https://github.com/abhigyan1102/event-seal/blob/main/docs/verification-invariants.md"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Verification invariants <span aria-hidden="true">↗</span>
-          </a>
-          <a
-            href="https://github.com/abhigyan1102/event-seal/blob/main/docs/transaction-inspection.md"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Transaction inspection <span aria-hidden="true">↗</span>
-          </a>
-          <a
-            href="https://github.com/abhigyan1102/event-seal/blob/main/docs/threat-model.md"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Threat model <span aria-hidden="true">↗</span>
-          </a>
-        </div>
-        <div className="docs-reference__ledger" aria-hidden="true" />
       </section>
     </main>
   );
