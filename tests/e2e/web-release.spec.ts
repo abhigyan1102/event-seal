@@ -62,7 +62,7 @@ test("serves the product homepage and supports keyboard navigation", async ({
   await expect(page).toHaveURL(/\/$/);
   await expect(
     page.getByRole("heading", {
-      name: "Verify Solana events before your backend acts.",
+      name: "Verify Solana events. Then act.",
     }),
   ).toBeVisible();
 
@@ -125,7 +125,7 @@ test("keeps the public homepage usable at 390px", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Verify Solana events before your backend acts.",
+      name: "Verify Solana events. Then act.",
     }),
   ).toBeVisible();
   await expect(
