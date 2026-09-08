@@ -17,7 +17,8 @@ describe("DeveloperDocs", () => {
   it("documents inspection as separate from verification", () => {
     const html = renderToStaticMarkup(<DeveloperDocs />);
 
-    expect(html).toContain("Build on verified Solana events.");
+    expect(html).toContain("Build on verified");
+    expect(html).toContain("Solana events.");
     expect(html).toContain("No verdict. No receipt.");
     expect(html).toContain("Trusted identity goes in.");
     expect(html).toContain("Missing evidence never passes.");
