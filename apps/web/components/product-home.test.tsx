@@ -17,9 +17,9 @@ describe("ProductHome", () => {
   it("explains the product without overstating inconclusive evidence", () => {
     const html = renderToStaticMarkup(<ProductHome />);
 
-    expect(html).toContain("Verify Solana events before your backend acts.");
-    expect(html).toContain("Finalized first.");
-    expect(html).toContain("Identity, not inference.");
+    expect(html).toContain("Verify Solana events.");
+    expect(html).toContain("even when they emitted the expected event");
+    expect(html).toContain("independently of discovered candidates");
     expect(html).toContain("Missing or unreliable RPC evidence");
     expect(html).toContain("never presented as verified");
   });
