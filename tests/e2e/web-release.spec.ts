@@ -94,10 +94,12 @@ test("serves the product homepage and supports keyboard navigation", async ({
   await expectNoAxeViolations(page);
 });
 
-test("serves accurate developer documentation at desktop and 390px", async ({
+test("opens developer documentation from the homepage at desktop and 390px", async ({
   page,
 }) => {
-  await page.goto("/docs");
+  await page.goto("/");
+  await page.getByRole("link", { name: "Read the docs" }).click();
+  await expect(page).toHaveURL(/\/docs$/);
 
   await expect(
     page.getByRole("heading", { name: "Build on verified Solana events." }),
@@ -107,7 +109,9 @@ test("serves accurate developer documentation at desktop and 390px", async ({
   await expectNoAxeViolations(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
+  await page.goto("/");
+  await page.getByRole("link", { name: "Read the docs" }).click();
+  await expect(page).toHaveURL(/\/docs$/);
   await expect(
     page.getByRole("heading", { name: "Build on verified Solana events." }),
   ).toBeVisible();
