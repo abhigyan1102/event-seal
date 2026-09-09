@@ -194,9 +194,13 @@ administrative keys, internal credentials, and RPC credentials server-side.
 
 ### Verification workspace
 
-On `/verify`, load **Successful event** or **Failed transaction** to populate a real devnet example, then click **Verify event**. Examples only fill inputs: every submission fetches live evidence. The successful example should return `verified / VERIFIED`; the failed transaction should return `rejected / TX_FAILED` without a receipt. RPC availability and retained transaction history can affect either example.
+On `/verify`, enter a transaction signature and its network, then click **Inspect transaction**. You can also load **Successful event** or **Failed transaction** to populate a real devnet example. Examples only fill inputs: every submission fetches live evidence.
 
-For your own transaction, choose its cluster and supply the expected emitting program's trusted deployment address and eight-byte Anchor event discriminator (16 hexadecimal characters). Expand **Where do I find these values?** for guidance. A transaction can invoke several programs, and not every transaction contains a supported Anchor log event.
+After inspection, expand **Advanced: enter trusted event identity**, supply the expected program ID and event discriminator from an independently trusted deployment and IDL, then click **Verify trusted event identity**. Selecting an unverified candidate does not populate either trusted field. The devnet examples include identity from the repository's demo fixture. The successful example should return `verified / VERIFIED`; the failed transaction should return `rejected / TX_FAILED` without a receipt. RPC availability and retained transaction history can affect either example.
+
+For your own transaction, use the expected emitting program's trusted deployment address and eight-byte Anchor event discriminator (16 hexadecimal characters). Expand **What can this inspector find?** for coverage and limitations, or read the public `/docs` guide. A transaction can invoke several programs, and not every transaction contains a supported Anchor log event.
+
+If the local app reports **Inspection is not configured** or **Verification is not configured**, check that `apps/web/.env.local` contains the matching backend URL, anon key, and `EVENTSEAL_INTERNAL_API_SECRET`, then restart Next.js. Merging code does not deploy functions or configure their secrets: follow the [InsForge deploy runbook](docs/insforge-deploy-runbook.md) to apply the merged function bundles and matching internal credential. Never remove the credential check to bypass this error.
 
 The workspace displays the returned checks, an explicit verdict, and reason-specific next steps. Expand **Transaction and receipt details** for the exact evidence identity, open the transaction in Solana Explorer, or copy the result JSON. Only issued receipts have a receipt-ID copy action or can be saved. Editing a request clears the previous result; incomplete evidence is never presented as a pass.
 

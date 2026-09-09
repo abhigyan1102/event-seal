@@ -26,6 +26,7 @@ import {
 } from "../lib/verification-workspace";
 import { TransactionInspectionView } from "./transaction-inspection";
 import { VerificationReceipt } from "./verification-receipt";
+import { VerificationGuide } from "./verification-guide";
 
 gsap.registerPlugin(useGSAP);
 
@@ -103,8 +104,7 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
       const media = gsap.matchMedia();
       media.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.from("[data-reveal]", {
-          opacity: 0,
-          y: 8,
+          y: 12,
           duration: 0.3,
           stagger: 0.04,
           clearProps: "opacity,transform",
@@ -124,7 +124,7 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
       media.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.fromTo(
           feedback.current,
-          { opacity: 0, y: 6 },
+          { y: 6 },
           { opacity: 1, y: 0, duration: 0.2, clearProps: "opacity,transform" },
         );
       });
@@ -252,9 +252,17 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
       <header className="verify-intro" data-reveal>
         <div>
           <h1>Inspect a Solana transaction.</h1>
-          <p>See what happened first. Verify an event only when one exists.</p>
+          <p>Start with a signature. Verify against the event you expect.</p>
         </div>
-        <p className="verify-scope">Finalized evidence · Anchor logs</p>
+        <div className="verify-intro__art" aria-hidden="true">
+          {/* Native image avoids CSP-blocked inline styles from image optimization. */}
+          <img
+            src="/verify/optical-evidence.webp"
+            alt=""
+            width={600}
+            height={400}
+          />
+        </div>
       </header>
       <div className="verify-grid">
         <section
@@ -265,26 +273,6 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
           <div className="panel-heading">
             <h2 id="request-heading">Transaction request</h2>
             <p>A signature and its network are enough to begin.</p>
-          </div>
-          <div className="example-actions" aria-label="Load a devnet example">
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={busy}
-              aria-pressed={example === "success"}
-              onClick={() => loadExample("success")}
-            >
-              Successful event
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={busy}
-              aria-pressed={example === "failure"}
-              onClick={() => loadExample("failure")}
-            >
-              Failed transaction
-            </button>
           </div>
           <form
             className="inspection-form"
@@ -351,6 +339,28 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
             </button>
           </form>
 
+          <p className="example-label">Try a devnet example</p>
+          <div className="example-actions" aria-label="Load a devnet example">
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy}
+              aria-pressed={example === "success"}
+              onClick={() => loadExample("success")}
+            >
+              Successful event
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy}
+              aria-pressed={example === "failure"}
+              onClick={() => loadExample("failure")}
+            >
+              Failed transaction
+            </button>
+          </div>
+
           {example && (
             <p className="example-note" role="status">
               Loaded a real devnet {example === "success" ? "event" : "failure"}
@@ -363,14 +373,11 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
               className="verification-step"
               aria-labelledby="verification-step-heading"
             >
-              <div className="step-marker" aria-hidden="true">
-                2
-              </div>
               <div className="panel-heading">
                 <h2 id="verification-step-heading">Verify an event</h2>
                 <p>
-                  Optional. Candidate values are discovered from untrusted logs
-                  and still require verification.
+                  Supply identity from a trusted deployment and IDL. Selecting a
+                  candidate does not set these values.
                 </p>
               </div>
               <form
@@ -593,12 +600,14 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
               <TransactionInspectionView result={inspection.result} />
             ) : (
               <div className="empty-state">
-                <div className="receipt-icon" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <h3>Start with a transaction signature.</h3>
+                <img
+                  className="verify-empty-art"
+                  src="/verify/optical-evidence.webp"
+                  alt=""
+                  width={600}
+                  height={400}
+                />
+                <h3>Your evidence starts here.</h3>
                 <p>
                   We’ll show its finalized status, execution outcome, observed
                   programs, and any unverified event candidates.
@@ -611,6 +620,7 @@ export function VerifyWorkspace({ signedIn }: { signedIn: boolean }) {
           </div>
         </section>
       </div>
+      <VerificationGuide />
     </main>
   );
 }
