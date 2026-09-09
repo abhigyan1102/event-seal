@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { AuthControls } from "../components/auth-controls";
 import { ActiveNavLink } from "../components/active-nav-link";
+import { RouteTransitionBoundary } from "../components/route-transition-boundary";
 import { getCurrentUser } from "../lib/auth-server";
 
 import "./globals.css";
@@ -29,41 +30,43 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <header className="global-nav">
-          <nav className="global-nav__inner" aria-label="Primary navigation">
-            <Link className="brand" href="/" aria-label="EventSeal home">
-              EventSeal
-            </Link>
-            <ActiveNavLink href="/verify">Verify</ActiveNavLink>
-            <ActiveNavLink href="/docs">Docs</ActiveNavLink>
-            <a
-              className="nav-link nav-link--external"
-              href="https://github.com/abhigyan1102/event-seal"
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub
-              <span aria-hidden="true">↗</span>
-            </a>
-            <AuthControls user={user} />
-          </nav>
-        </header>
-        <div className="app-shell">{children}</div>
-        <footer className="site-footer">
-          <div className="site-footer__inner">
-            <strong>EventSeal</strong>
-            <div className="site-footer__links">
-              <Link href="/docs">Docs</Link>
+        <RouteTransitionBoundary>
+          <header className="global-nav">
+            <nav className="global-nav__inner" aria-label="Primary navigation">
+              <Link className="brand" href="/" aria-label="EventSeal home">
+                EventSeal
+              </Link>
+              <ActiveNavLink href="/verify">Verify</ActiveNavLink>
+              <ActiveNavLink href="/docs">Docs</ActiveNavLink>
               <a
+                className="nav-link nav-link--external"
                 href="https://github.com/abhigyan1102/event-seal"
                 target="_blank"
                 rel="noreferrer"
               >
-                GitHub <span aria-hidden="true">↗</span>
+                GitHub
+                <span aria-hidden="true">↗</span>
               </a>
+              <AuthControls user={user} />
+            </nav>
+          </header>
+          <div className="app-shell">{children}</div>
+          <footer className="site-footer">
+            <div className="site-footer__inner">
+              <strong>EventSeal</strong>
+              <div className="site-footer__links">
+                <Link href="/docs">Docs</Link>
+                <a
+                  href="https://github.com/abhigyan1102/event-seal"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GitHub <span aria-hidden="true">↗</span>
+                </a>
+              </div>
             </div>
-          </div>
-        </footer>
+          </footer>
+        </RouteTransitionBoundary>
       </body>
     </html>
   );
