@@ -27,7 +27,6 @@ import {
 import { TransactionInspectionView } from "./transaction-inspection";
 import { VerificationReceipt } from "./verification-receipt";
 import { VerificationGuide } from "./verification-guide";
-import "./verify-workspace.css";
 
 gsap.registerPlugin(useGSAP);
 

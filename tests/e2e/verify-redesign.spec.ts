@@ -5,6 +5,38 @@ const signature = "1".repeat(64);
 const program = "1".repeat(32);
 const discriminator = "0102030405060708";
 
+test("loads the verifier theme before client-side navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.styleSheets).some((sheet) => {
+          try {
+            return Array.from(sheet.cssRules).some((rule) =>
+              rule.cssText.includes("body:has(.verify-page)"),
+            );
+          } catch {
+            return false;
+          }
+        }),
+      ),
+    )
+    .toBe(true);
+
+  await page.getByRole("link", { name: "Verify", exact: true }).click();
+  await expect(page).toHaveURL(/\/verify$/);
+  await expect(page.locator("body")).toHaveCSS(
+    "background-color",
+    "rgb(245, 244, 239)",
+  );
+  await expect(page.locator(".global-nav")).toHaveCSS(
+    "background-color",
+    "rgb(245, 244, 239)",
+  );
+});
+
 test("keeps the inspect action visible on laptop and mobile with reduced motion", async ({
   page,
 }, testInfo) => {

@@ -9,6 +9,7 @@ import { ActiveNavLink } from "../components/active-nav-link";
 import { getCurrentUser } from "../lib/auth-server";
 
 import "./globals.css";
+import "../components/verify-workspace.css";
 
 export const dynamic = "force-dynamic";
 
