@@ -76,6 +76,10 @@ test("serves the product homepage and supports keyboard navigation", async ({
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
+    page.getByRole("link", { name: "Docs", exact: true }).first(),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
     page.getByRole("link", { name: "GitHub" }).first(),
   ).toBeFocused();
   await page.keyboard.press("Tab");
@@ -87,6 +91,35 @@ test("serves the product homepage and supports keyboard navigation", async ({
     page.getByRole("link", { name: "Verify a transaction" }),
   ).toBeFocused();
 
+  await expectNoAxeViolations(page);
+});
+
+test("opens developer documentation from the homepage at desktop and 390px", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Read the docs" }).click();
+  await expect(page).toHaveURL(/\/docs$/);
+
+  await expect(
+    page.getByRole("heading", { name: "Build on verified Solana events." }),
+  ).toBeVisible();
+  await expect(page.getByText("No verdict. No receipt.")).toBeVisible();
+  await expect(page.getByText("Missing evidence never passes.")).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("link", { name: "Read the docs" }).click();
+  await expect(page).toHaveURL(/\/docs$/);
+  await expect(
+    page.getByRole("heading", { name: "Build on verified Solana events." }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
   await expectNoAxeViolations(page);
 });
 
