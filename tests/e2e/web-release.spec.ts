@@ -54,19 +54,21 @@ test.afterEach(({ page }) => {
   expect(browserProblems.get(page) ?? []).toEqual([]);
 });
 
-test("redirects home to the verifier and supports keyboard navigation", async ({
+test("serves the product homepage and supports keyboard navigation", async ({
   page,
 }) => {
   await page.goto("/");
 
-  await expect(page).toHaveURL(/\/verify$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(
-    page.getByRole("heading", { name: "Inspect a Solana transaction." }),
+    page.getByRole("heading", {
+      name: "Verify Solana events. Then act.",
+    }),
   ).toBeVisible();
 
   await page.keyboard.press("Tab");
   await expect(
-    page.getByRole("link", { name: "EventSeal verifier" }),
+    page.getByRole("link", { name: "EventSeal home" }),
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
@@ -82,9 +84,29 @@ test("redirects home to the verifier and supports keyboard navigation", async ({
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
-    page.getByRole("button", { name: "Successful event" }),
+    page.getByRole("link", { name: "Verify a transaction" }),
   ).toBeFocused();
 
+  await expectNoAxeViolations(page);
+});
+
+test("keeps the public homepage usable at 390px", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Verify Solana events. Then act.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Verify a transaction" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
   await expectNoAxeViolations(page);
 });
 

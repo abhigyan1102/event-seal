@@ -13,7 +13,7 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "EventSeal — Verify Solana events",
+  title: "EventSeal",
   description:
     "Inspect finalized transaction evidence before your backend acts on a Solana event.",
 };
@@ -30,11 +30,7 @@ export default async function RootLayout({
       <body>
         <header className="global-nav">
           <nav className="global-nav__inner" aria-label="Primary navigation">
-            <Link
-              className="brand"
-              href="/verify"
-              aria-label="EventSeal verifier"
-            >
+            <Link className="brand" href="/" aria-label="EventSeal home">
               EventSeal
             </Link>
             <ActiveNavLink href="/verify">Verify</ActiveNavLink>
