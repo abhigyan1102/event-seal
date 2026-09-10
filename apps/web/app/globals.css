@@ -150,60 +150,6 @@ select:focus-visible {
   overflow-x: hidden;
 }
 
-.route-transition-boundary {
-  min-height: 100vh;
-}
-
-.route-transition-boundary[data-navigation-pending="true"]
-  .route-transition-boundary__current {
-  visibility: hidden;
-}
-
-.route-transition {
-  position: fixed;
-  z-index: 100;
-  inset: 0;
-  display: grid;
-  grid-template-rows: 44px minmax(0, 1fr);
-  color: #17332b;
-  background: #f3f0e8;
-}
-
-.route-transition__bar {
-  display: flex;
-  align-items: center;
-  color: #f3f0e8;
-  background: #10251f;
-  padding: 0 24px;
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.route-transition__body {
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  padding: 48px 24px;
-}
-
-.route-transition__body p {
-  margin: 0 0 20px;
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 5vw, 3rem);
-  font-weight: 560;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-  text-align: center;
-}
-
-.route-transition__body span {
-  width: min(180px, 42vw);
-  height: 2px;
-  background: #ff6240;
-}
-
 .verify-page {
   width: min(100%, 1280px);
   max-width: 100%;
