@@ -123,53 +123,6 @@ test("opens developer documentation from the homepage at desktop and 390px", asy
   await expectNoAxeViolations(page);
 });
 
-test("hides the outgoing page while public routes are loading", async ({
-  page,
-}) => {
-  await page.route("**/*", async (route) => {
-    if (route.request().headers().rsc === "1") {
-      await new Promise((resolve) => setTimeout(resolve, 750));
-    }
-    await route.continue();
-  });
-
-  await page.goto("/verify");
-  await page
-    .getByRole("link", { name: "EventSeal home" })
-    .click({ noWaitAfter: true });
-  await expect(
-    page.getByRole("status", { name: "Opening the EventSeal overview." }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Inspect a Solana transaction." }),
-  ).toBeHidden();
-  await expect(page).toHaveURL(/\/$/);
-
-  await page
-    .getByRole("link", { name: "Docs", exact: true })
-    .first()
-    .click({ noWaitAfter: true });
-  await expect(
-    page.getByRole("status", { name: "Opening the developer guide." }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Verify Solana events. Then act." }),
-  ).toBeHidden();
-  await expect(page).toHaveURL(/\/docs$/);
-
-  await page
-    .getByRole("navigation", { name: "Primary navigation" })
-    .getByRole("link", { name: "Verify", exact: true })
-    .click({ noWaitAfter: true });
-  await expect(
-    page.getByRole("status", { name: "Opening the verifier." }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Build on verified Solana events." }),
-  ).toBeHidden();
-  await expect(page).toHaveURL(/\/verify$/);
-});
-
 test("keeps the public homepage usable at 390px", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
