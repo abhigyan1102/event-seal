@@ -35,6 +35,7 @@ export default async function RootLayout({
               EventSeal
             </Link>
             <ActiveNavLink href="/verify">Verify</ActiveNavLink>
+            <ActiveNavLink href="/arc">Arc</ActiveNavLink>
             <ActiveNavLink href="/docs">Docs</ActiveNavLink>
             <a
               className="nav-link nav-link--external"
@@ -53,6 +54,7 @@ export default async function RootLayout({
           <div className="site-footer__inner">
             <strong>EventSeal</strong>
             <div className="site-footer__links">
+              <Link href="/arc">Arc USDC</Link>
               <Link href="/docs">Docs</Link>
               <a
                 href="https://github.com/abhigyan1102/event-seal"

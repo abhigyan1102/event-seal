@@ -76,6 +76,10 @@ test("serves the product homepage and supports keyboard navigation", async ({
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
+    page.getByRole("link", { name: "Arc", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
     page.getByRole("link", { name: "Docs", exact: true }).first(),
   ).toBeFocused();
   await page.keyboard.press("Tab");
