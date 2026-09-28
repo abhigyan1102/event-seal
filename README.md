@@ -164,6 +164,11 @@ stores a complete v2 record with insert-only conflict handling, then reads it
 back and checks every field. Existing v1 receipts remain readable; new receipts
 cannot overwrite either version.
 
+## Operations guides
+
+- [Consumer integration](./docs/consumer-integration.md): trusted identity, verdict handling, and idempotent actions.
+- [Incident response](./docs/incident-response.md): containment, triage, and recovery for verification incidents.
+
 ## Local development
 
 Prerequisites:
