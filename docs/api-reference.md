@@ -42,6 +42,19 @@ The TypeScript SDK exports `verifyEvent`, which returns `Promise<VerificationRes
 | `CPI_EVENT_UNSUPPORTED`  | `indeterminate` | This version does not verify Anchor CPI events.                   |
 | `INVALID_REQUEST`        | `indeterminate` | Required identifiers or discriminator formatting were invalid.    |
 
+## Same-origin web routes
+
+The Next.js application exposes two browser-facing routes. Both accept `POST` with `Content-Type: application/json`, limit the body to 4 KiB, return JSON, and set `Cache-Control: no-store`. Inspection rejects unknown fields; verification validates the required fields and rejects caller-supplied `rpcUrl`.
+
+| Route          | JSON request                                                                                                                       | Success response                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `/api/inspect` | `signature` and `cluster`                                                                                                          | `TransactionInspection`; discovery only, with no verdict or receipt ID. |
+| `/api/verify`  | `signature`, `cluster`, `expectedProgramId`, and `event` (`format` and `discriminator`); optional `commitment` is `finalized` only | `VerificationResult` with a verdict and reason code.                    |
+
+The web routes attach the internal function credential on the server. Browser callers do not send it and cannot supply an RPC URL. A validation error returns `400`, an oversized body `413`, and an unsupported media type `415`. Missing server configuration returns `503`; an invalid upstream response or failed function invocation returns `502`. A `200` response can still contain `rejected` or `indeterminate`; inspect the verdict before acting.
+
+For inspection result fields and limitations, see [transaction inspection](./transaction-inspection.md). The hosted functions below are separate backend endpoints.
+
 ## Hosted functions
 
 InsForge exposes each deployed handler under `/functions/{slug}`.
