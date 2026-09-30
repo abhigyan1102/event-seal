@@ -62,6 +62,12 @@ or incomplete RPC provider; RPC evidence remains a trust dependency. Provider
 independence, rate limiting, CPI event decoding, arbitrary protocol decoders,
 and transaction-level receipts are not introduced here.
 
+## Reading inspection results safely
+
+Treat `finality`, `execution`, and `candidates` as observations from the configured RPC. Even a finalized, successful transaction with a candidate is not a verified application event. Match the expected program and discriminator against a trusted deployment record, then make a separate verification request. If logs are unavailable or incomplete, keep any downstream action pending instead of interpreting an empty candidate list as proof that no event occurred.
+
+Do not automatically copy `candidates[].emitterProgramId` or candidate bytes into trusted verification inputs. A transaction may invoke several programs, and a payload that resembles an Anchor event may be emitted by a program the application did not authorize. The [consumer integration guide](./consumer-integration.md) describes the downstream decision boundary.
+
 ## Network-safe RPC configuration
 
 Hosted inspection, verification, and webhook verification share this selection:
