@@ -16,6 +16,12 @@ Use this checklist when EventSeal results, receipts, RPC evidence, or deployment
 - **Receipt mismatch or lookup failure:** Preserve the receipt ID and response, then inspect the stored record and server logs. Do not overwrite an existing receipt to force a match. A receipt is evidence of a verification decision, not proof of downstream fulfillment.
 - **Suspected credential exposure:** Disable affected callers or webhook delivery, rotate the exposed credential through the protected secret manager, redeploy the matching configuration, and verify old credentials fail. Follow the [InsForge deploy runbook](./insforge-deploy-runbook.md) for coordinated internal-secret rotation.
 
+## Preserve evidence
+
+Record the original request and response, the RPC endpoint identity without embedded credentials, relevant finalized transaction data, function error category, and the deployment revision. Keep a timeline of when consumers were paused, credentials were rotated, and queued work was replayed. Restrict access to incident records that contain customer or transaction context.
+
+For a disputed receipt, compare the complete stored receipt with the verification request and immutable event evidence. Do not edit a receipt to make it agree with a newer request. If evidence remains ambiguous, keep the action paused and record the unresolved question explicitly.
+
 ## Recover
 
 Re-enable a protected action only after the trusted event identity, finalized RPC evidence, deployed code and configuration, and consumer idempotency state have been checked. Replay queued work through the normal verification path; do not convert previous `indeterminate` results into `verified` without new evidence. Review actions taken during the incident window for duplicates or incorrect fulfillment and record the outcome.
