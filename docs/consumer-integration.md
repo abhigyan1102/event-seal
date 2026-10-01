@@ -20,6 +20,12 @@ A `verified` verdict proves the supported event was attributed to the expected p
 
 The consumer should persist its own action state and enforce an atomic uniqueness constraint for the business operation. Use a key that includes the consumer's operation ID and the relevant verified event identity. A receipt ID is useful evidence, but it is not an authorization token or a substitute for the consumer's idempotency key. Repeated webhook deliveries and retries must not repeat an irreversible action.
 
+## Retry and duplicate-delivery policy
+
+Keep pending work keyed by the consumer's operation ID. Retry `indeterminate` only with a bounded schedule and a visible terminal state for manual review; a timeout is never a pass. Do not retry `rejected` as though it were a transient RPC failure without investigating the reason code. Reverify against the trusted identity when fresh evidence is available.
+
+Before the protected side effect, make an atomic state transition that claims the operation and the verified event identity. If that claim already exists, return the previous operation outcome. If the side effect fails after the claim, reconcile its actual state before retrying. This prevents a webhook redelivery or worker restart from turning one verified event into two fulfillments.
+
 ## Keep an audit trail
 
 For each decision, retain the request's trusted program ID, discriminator, cluster, transaction signature, EventSeal verdict and reason code, receipt ID when present, and the consumer's own operation ID. Avoid storing secrets or unnecessary personal data in this record. Link the decision to the exact release and configuration used by the consumer so a later investigation can reproduce it.
