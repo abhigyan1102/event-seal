@@ -168,6 +168,7 @@ cannot overwrite either version.
 
 - [Consumer integration](./docs/consumer-integration.md): trusted identity, verdict handling, and idempotent actions.
 - [Incident response](./docs/incident-response.md): containment, triage, and recovery for verification incidents.
+- [Release evidence checklist](./docs/release-evidence-checklist.md): local checks and live deployment proof.
 
 ## Local development
 
