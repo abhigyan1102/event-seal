@@ -73,6 +73,7 @@ Any missing or ambiguous evidence fails closed as `indeterminate`.
 | --------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Verification SDK      | [`packages/sdk`](./packages/sdk)                         | Fetch finalized RPC evidence, attribute Anchor log events, and return typed verdicts. |
 | Web application       | [`apps/web`](./apps/web)                                 | Submit verification requests and display evidence receipts.                           |
+| Arc settlement gate   | [`apps/web/app/arc`](./apps/web/app/arc)                 | Verify finalized Arc Testnet USDC payments before releasing application value.        |
 | Hosted functions      | [`functions`](./functions)                               | Expose verification, receipt lookup, and Helius webhook handlers on InsForge.         |
 | Receipt database      | [`migrations`](./migrations)                             | Store deterministic verification receipts with server-only writes.                    |
 | Demonstration program | [`programs/event-seal-demo`](./programs/event-seal-demo) | Produce matching successful and failed Anchor events for adversarial testing.         |
@@ -147,6 +148,21 @@ interface VerificationResult {
 ```
 
 See the [API reference](./docs/api-reference.md) for all request fields and reason codes.
+
+## Arc USDC settlement gate
+
+EventSeal also includes an Arc Testnet payment gate at `/arc`. It
+reads live Arc JSON-RPC evidence and releases a backend action only when exactly
+one successful canonical USDC transfer matches the trusted sender, recipient,
+and 6-decimal amount. Failed transactions and mismatches stop; missing,
+malformed, or ambiguous evidence retries without releasing value.
+
+The flow uses Arc chain `5042002`, the canonical USDC interface at
+`0x3600000000000000000000000000000000000000`, and Arc's deterministic
+single-confirmation finality. It is a read-only testnet integration and requires
+no wallet key. See the
+[Arc USDC settlement guide](./docs/arc-usdc-settlement.md) for the live example,
+API contract, architecture diagram, security boundary, and source links.
 
 ## Deterministic receipts
 
