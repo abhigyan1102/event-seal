@@ -321,7 +321,7 @@ EventSeal verifies event commitment and attribution. It does not prove applicati
 
 ```text
 event-seal/
-├── apps/web/                  React and Vite verification interface
+├── apps/web/                  Next.js verification and receipt interface
 ├── docs/                      Architecture, API, threat model, and invariants
 ├── examples/helius-webhook/   Helius integration notes
 ├── functions/                 InsForge edge-function source
