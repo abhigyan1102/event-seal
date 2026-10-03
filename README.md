@@ -85,8 +85,9 @@ returns execution status, finality, programs observed in logs, and candidate
 eight-byte event prefixes. It does **not** issue a receipt or assert event
 identity. Missing/incomplete logs are distinct from no supported log event.
 See [transaction inspection](./docs/transaction-inspection.md) for the contract,
-network-specific RPC configuration, and reproducible mainnet checks. The web
-signature-first flow is a separate follow-up; the current verifier form is unchanged.
+network-specific RPC configuration, and reproducible mainnet checks. The
+current `/verify` page begins with transaction inspection; verification then
+requires independently supplied program and event identity.
 
 Install the repository dependencies and build the SDK:
 
