@@ -7,7 +7,9 @@ EventSeal must never return `verified` unless every required invariant is proven
 3. Transaction metadata is present and `meta.err === null`.
 4. The event is attributed to the expected active program invocation frame.
 5. The first eight event bytes equal the expected Anchor discriminator.
-6. CPI events are attributed through the correct inner-instruction execution path.
+6. Anchor CPI events currently return `indeterminate` with
+   `CPI_EVENT_UNSUPPORTED`. They must not become `verified` until the correct
+   inner-instruction attribution path is implemented and tested.
 7. Missing, malformed, truncated, or unavailable evidence produces `indeterminate`.
 8. V2 receipt identity binds the cluster, finalized commitment, signature,
    trusted program, event format, trusted discriminator, and attributed event
