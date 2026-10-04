@@ -14,12 +14,16 @@ flowchart TB
 
   subgraph Delivery["Delivery layer"]
     Web["Verification web app"]
+    InspectRoute["POST /api/inspect"]
+    VerifyRoute["POST /api/verify"]
+    InspectFunction["inspect-transaction function"]
     VerifyFunction["verify-event function"]
     HeliusFunction["helius-webhook function"]
     ReceiptFunction["get-receipt function"]
   end
 
   subgraph Core["Verification core"]
+    Inspector["inspectTransaction"]
     Verifier["verifyEvent"]
     Attribution["Anchor log attribution"]
     Identity["Receipt identity"]
@@ -31,7 +35,12 @@ flowchart TB
   Relayer --> VerifyFunction
   Indexer --> VerifyFunction
   Agent --> VerifyFunction
-  Web --> VerifyFunction
+  Web --> InspectRoute
+  Web --> VerifyRoute
+  InspectRoute --> InspectFunction
+  VerifyRoute --> VerifyFunction
+  InspectFunction --> Inspector
+  Inspector --> RPC
   HeliusFunction --> Verifier
   VerifyFunction --> Verifier
   Verifier --> RPC
@@ -70,6 +79,11 @@ sequenceDiagram
     Gateway-->>Consumer: Verification result and reason code
   end
 ```
+
+The same-origin web routes validate browser requests and attach the internal
+function credential on the server. Inspection returns candidates without a
+verdict or receipt; only a separate verification request can evaluate trusted
+program and event identity.
 
 ## Trust boundaries
 
