@@ -26,6 +26,12 @@ Keep pending work keyed by the consumer's operation ID. Retry `indeterminate` on
 
 Before the protected side effect, make an atomic state transition that claims the operation and the verified event identity. If that claim already exists, return the previous operation outcome. If the side effect fails after the claim, reconcile its actual state before retrying. This prevents a webhook redelivery or worker restart from turning one verified event into two fulfillments.
 
+## Example decision sequence
+
+For a payment fulfillment worker, first load the pending order and its configured Solana cluster, program ID, and event discriminator. Verify the submitted transaction against that identity. If the verdict is `verified`, decode the same event from finalized transaction data and match its event position and data hash to the returned evidence before comparing its amount and recipient with the order. Atomically claim the order before fulfillment, and reconcile an uncertain fulfillment result before any retry. For `rejected` or `indeterminate`, leave fulfillment blocked and record the reason code.
+
+The verifier does not decode arbitrary business fields or decide whether an order is paid. That remains the consumer's responsibility.
+
 ## Keep an audit trail
 
 For each decision, retain the request's trusted program ID, discriminator, cluster, transaction signature, EventSeal verdict and reason code, receipt ID when present, and the consumer's own operation ID. Avoid storing secrets or unnecessary personal data in this record. Link the decision to the exact release and configuration used by the consumer so a later investigation can reproduce it.
