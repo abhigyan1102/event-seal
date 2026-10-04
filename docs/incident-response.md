@@ -26,4 +26,8 @@ For a disputed receipt, compare the complete stored receipt with the verificatio
 
 Re-enable a protected action only after the trusted event identity, finalized RPC evidence, deployed code and configuration, and consumer idempotency state have been checked. Replay queued work through the normal verification path; do not convert previous `indeterminate` results into `verified` without new evidence. Review actions taken during the incident window for duplicates or incorrect fulfillment and record the outcome.
 
+## Close the incident
+
+Document the root cause, affected operations, and any incorrect or duplicate downstream actions. Confirm the queue was replayed through normal verification, the consumer's duplicate guard held, and the intended deployment and credentials are active. Record any unresolved evidence or remediation owner before ending the incident. Do not label an unexplained `verified` result as harmless solely because no receipt was saved.
+
 This document is an operator checklist. The [threat model](./threat-model.md) and [verification invariants](./verification-invariants.md) define the verifier's intended security boundary.
