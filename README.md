@@ -165,7 +165,12 @@ stores a complete v2 record with insert-only conflict handling, then reads it
 back and checks every field. Existing v1 receipts remain readable; new receipts
 cannot overwrite either version.
 
-## Operations guides
+## Documentation
+
+- [API reference](./docs/api-reference.md): SDK inputs, verdicts, and web and hosted routes.
+- [Architecture](./docs/architecture.md): verification flow and trust boundaries.
+- [Verification invariants](./docs/verification-invariants.md): conditions required before an event can be trusted.
+- [Threat model](./docs/threat-model.md): attacker cases and product boundaries.
 
 - [Consumer integration](./docs/consumer-integration.md): trusted identity, verdict handling, and idempotent actions.
 - [Incident response](./docs/incident-response.md): containment, triage, and recovery for verification incidents.
