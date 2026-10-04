@@ -53,7 +53,29 @@ The Next.js application exposes two browser-facing routes. Both accept `POST` wi
 
 The web routes attach the internal function credential on the server. Browser callers do not send it and cannot supply an RPC URL. A validation error returns `400`, an oversized body `413`, and an unsupported media type `415`. Missing server configuration returns `503`; an invalid upstream response or failed function invocation returns `502`. A `200` response can still contain `rejected` or `indeterminate`; inspect the verdict before acting.
 
-For inspection result fields and limitations, see [transaction inspection](./transaction-inspection.md). The hosted functions below are separate backend endpoints.
+A browser verification request can use the trusted identity configured by the consuming application:
+
+```ts
+const response = await fetch("/api/verify", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    signature,
+    cluster: "devnet",
+    expectedProgramId: trustedProgramId,
+    event: { format: "anchor-log", discriminator: trustedDiscriminator },
+  }),
+});
+
+if (!response.ok)
+  throw new Error(`Verification request failed: ${response.status}`);
+const result = await response.json();
+if (result.verdict !== "verified") {
+  // Keep the protected action pending or stop it according to reasonCode.
+}
+```
+
+The program ID and discriminator must come from a trusted deployment and matching schema. They must not be copied from an inspection candidate. For inspection result fields and limitations, see [transaction inspection](./transaction-inspection.md). The hosted functions below are separate backend endpoints.
 
 ## Hosted functions
 
