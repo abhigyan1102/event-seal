@@ -18,4 +18,8 @@ This checklist is for an operator preparing a web or backend release. It separat
 5. Confirm a direct call to a protected function without the internal credential is rejected. Confirm malformed and oversized public requests do not reach verification.
 6. Record the exact evidence, time, environment, and unresolved gates. Do not claim production proof from local mocks, preview data, or a historical devnet run.
 
+## Non-secret release record
+
+Keep one record per target environment with the source commit, deployment identifiers, migration and function versions, cluster, test transaction signatures, observed verdicts and reason codes, receipt IDs where applicable, and the time and operator of each check. Mark every gate as passed, failed, or not run. Record why a gate was not run instead of presenting an incomplete record as a pass. Store credentials only in the protected secret manager, never in this record.
+
 If a gate fails, stop promotion or pause the affected consumer action. Use the [incident response checklist](./incident-response.md) for unexpected verification or receipt behavior.
