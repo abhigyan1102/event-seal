@@ -42,6 +42,18 @@ The TypeScript SDK exports `verifyEvent`, which returns `Promise<VerificationRes
 | `CPI_EVENT_UNSUPPORTED`  | `indeterminate` | This version does not verify Anchor CPI events.                   |
 | `INVALID_REQUEST`        | `indeterminate` | Required identifiers or discriminator formatting were invalid.    |
 
+## `inspectTransaction(input)`
+
+The SDK exports `inspectTransaction`, which returns `Promise<TransactionInspection>`.
+
+| Field       | Required | Description                                                                    |
+| ----------- | -------- | ------------------------------------------------------------------------------ |
+| `signature` | Yes      | Solana transaction signature to inspect.                                       |
+| `cluster`   | Yes      | `mainnet-beta`, `devnet`, or `testnet`.                                        |
+| `rpcUrl`    | No       | Trusted custom RPC endpoint; its genesis hash must match the selected cluster. |
+
+The result has `kind: "transaction-inspection"`, observed finality and execution status, log availability, invoked programs, and untrusted log-event candidates. It has no `verdict` or `receiptId`. A `CANDIDATES_FOUND` reason is discovery, not approval to act; use a separate `verifyEvent` call with independently trusted program and event identity. See [transaction inspection](./transaction-inspection.md) for the complete result contract, reason codes, and safety limits.
+
 ## Same-origin web routes
 
 The Next.js application exposes two browser-facing routes. Both accept `POST` with `Content-Type: application/json`, limit the body to 4 KiB, return JSON, and set `Cache-Control: no-store`. Inspection rejects unknown fields; verification validates the required fields and rejects caller-supplied `rpcUrl`.
