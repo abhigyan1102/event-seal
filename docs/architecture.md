@@ -20,6 +20,7 @@ flowchart TB
     VerifyFunction["verify-event function"]
     HeliusFunction["helius-webhook function"]
     ReceiptFunction["get-receipt function"]
+    Writer["verifyAndPersist adapter"]
   end
 
   subgraph Core["Verification core"]
@@ -41,12 +42,14 @@ flowchart TB
   VerifyRoute --> VerifyFunction
   InspectFunction --> Inspector
   Inspector --> RPC
-  HeliusFunction --> Verifier
-  VerifyFunction --> Verifier
+  HeliusFunction --> Writer
+  VerifyFunction --> Writer
+  Writer --> Verifier
   Verifier --> RPC
   Verifier --> Attribution
   Attribution --> Identity
-  Identity --> Database
+  Identity -->|"result"| Writer
+  Writer -->|"receipt insert and readback"| Database
   ReceiptFunction --> Database
   Database --> Web
 ```
@@ -96,6 +99,12 @@ A provider payload is a delivery mechanism, not proof. The Helius adapter extrac
 The verifier relies on the selected RPC endpoint for finalized transaction data. RPC errors, missing transactions, missing metadata, and unavailable logs return `indeterminate`. EventSeal is not a light client and does not independently prove consensus.
 
 ### Receipt storage
+
+Direct SDK calls return verification results and deterministic receipt IDs
+without writing to a database. The hosted `verifyAndPersist` adapter owns
+receipt insertion and readback using server-side database credentials when
+the result contains a `receiptId`. Results without one return without a
+database write.
 
 V2 receipt IDs are content-addressed from the trusted request identity and
 immutable event evidence. The database permits public reads but reserves writes
