@@ -93,6 +93,12 @@ The program ID and discriminator must come from a trusted deployment and matchin
 
 InsForge exposes each deployed handler under `/functions/{slug}`.
 
+### `inspect-transaction`
+
+Send `POST /functions/inspect-transaction` with JSON containing only `signature` and `cluster`. This protected endpoint requires the server-only `X-EventSeal-Internal-Secret` header to match the deployment's internal credential; do not send that credential from a browser. The web application's `POST /api/inspect` route attaches it on the server.
+
+The function rejects extra fields, including `rpcUrl`, limits the streamed body to 4 KiB, and returns a `TransactionInspection` response with `Cache-Control: no-store`. It reads RPC evidence without creating or persisting a receipt. The SDK's optional custom RPC input is therefore distinct from the hosted endpoint's deployment-owned RPC configuration.
+
 ### `verify-event`
 
 Send a `POST` request whose JSON body matches `VerifyEventInput` except for
