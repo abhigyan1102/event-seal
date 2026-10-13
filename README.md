@@ -47,9 +47,9 @@ flowchart LR
   SDK --> RPC
   RPC --> SDK
   SDK --> Checks
-  Checks -->|"verified"| Receipt
-  Checks -->|"rejected"| Receipt
-  Checks -->|"indeterminate"| API
+  Checks -->|"receiptId present"| Receipt
+  Checks -->|"no receiptId"| API
+  Receipt --> API
   Receipt --> UI
   API --> Consumer
 ```
@@ -66,6 +66,11 @@ The verifier performs the following checks in order:
 8. Hash the event data and generate a deterministic receipt ID.
 
 Any missing or ambiguous evidence fails closed as `indeterminate`.
+
+A receipt records a verification result; consumers must still require a
+`verified` verdict before acting. A rejected `PROGRAM_MISMATCH` result can carry
+a receipt, while a failed transaction (`TX_FAILED`) returns none. Inspection
+also creates no receipt.
 
 ## Project components
 
