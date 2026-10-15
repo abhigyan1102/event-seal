@@ -83,9 +83,11 @@ if (!response.ok)
   throw new Error(`Verification request failed: ${response.status}`);
 const result = await response.json();
 if (result.verdict !== "verified") {
-  // Keep the protected action pending or stop it according to reasonCode.
+  throw new Error(`Event not trusted: ${result.reasonCode}`);
 }
 ```
+
+The example stops before any protected action when the verdict is not `verified`. A consumer should handle `indeterminate` through its bounded retry policy and investigate `rejected` using the reason code; see [consumer integration](./consumer-integration.md).
 
 The program ID and discriminator must come from a trusted deployment and matching schema. They must not be copied from an inspection candidate. For inspection result fields and limitations, see [transaction inspection](./transaction-inspection.md). The hosted functions below are separate backend endpoints.
 
