@@ -103,8 +103,13 @@ The function rejects extra fields, including `rpcUrl`, limits the streamed body 
 
 ### `verify-event`
 
-Send a `POST` request whose JSON body matches `VerifyEventInput` except for
-`rpcUrl`. Hosted verification uses the deployment-owned RPC endpoint
+Send `POST /functions/verify-event` with `Content-Type: application/json` and
+a JSON body matching `VerifyEventInput` except for `rpcUrl`. The caller must
+supply the server-only `X-EventSeal-Internal-Secret` credential configured as
+`EVENTSEAL_INTERNAL_API_SECRET` on the function. Authentication is checked before
+request-body parsing or verification. Browser callers use `POST /api/verify`,
+which attaches the credential on the server; never include it in browser code.
+Hosted verification uses the deployment-owned RPC endpoint
 configuration, not a caller-supplied endpoint. The function returns
 `VerificationResult` and stores results that have a deterministic receipt ID.
 New v2 receipt IDs bind the cluster, finalized commitment, signature, expected
